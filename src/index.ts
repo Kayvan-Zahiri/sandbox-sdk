@@ -41,6 +41,7 @@ export {
   type WaitForAddressOpts,
 } from './tailnet.js'
 export type {
+  Architecture,
   ListFilter,
   Pagination,
   PaginationResult,

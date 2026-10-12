@@ -10,6 +10,7 @@ import {
   SandboxCommandExecutionEvent_StartedSchema,
 } from './gen/depot/sandbox/v1/command_pb.js'
 import {
+  Architecture as ArchitectureProto,
   CreateSandboxResponseSchema,
   GetSandboxResponseSchema,
   ListSandboxesResponseSchema,
@@ -119,6 +120,7 @@ test('Sandbox.create takes an explicit client and binds it to the returned sandb
     timeoutMinutes: undefined,
     disableTailnet: undefined,
     configuration: undefined,
+    architecture: undefined,
   })
 
   await sandbox.stop()
@@ -223,6 +225,7 @@ test('Sandbox.create sends timeoutMinutes when provided', async () => {
     timeoutMinutes: 120,
     disableTailnet: undefined,
     configuration: undefined,
+    architecture: undefined,
   })
 })
 
@@ -423,4 +426,23 @@ test('Sandbox.create forwards disableTailnet', async () => {
   const recording = fakeClient({createSandbox: () => createResponse(makeSandbox())})
   await Sandbox.create(recording.client, {disableTailnet: true})
   assert.equal((recording.lastRequest('createSandbox') as {disableTailnet?: boolean}).disableTailnet, true)
+})
+
+test('Sandbox.create sends architecture and exposes the resolved one', async () => {
+  const recording = fakeClient({
+    createSandbox: () => createResponse(makeSandbox({architecture: ArchitectureProto.ARM64})),
+  })
+  const sandbox = await Sandbox.create(recording.client, {architecture: 'arm64'})
+  assert.equal(
+    (recording.lastRequest('createSandbox') as {architecture?: ArchitectureProto}).architecture,
+    ArchitectureProto.ARM64,
+  )
+  assert.equal(sandbox.architecture, 'arm64')
+})
+
+test('Sandbox.create leaves architecture unset by default', async () => {
+  const recording = fakeClient({createSandbox: () => createResponse(makeSandbox())})
+  const sandbox = await Sandbox.create(recording.client)
+  assert.equal((recording.lastRequest('createSandbox') as {architecture?: ArchitectureProto}).architecture, undefined)
+  assert.equal(sandbox.architecture, undefined, 'UNSPECIFIED from an older server maps to undefined')
 })

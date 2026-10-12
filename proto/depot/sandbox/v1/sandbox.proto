@@ -95,6 +95,13 @@ enum SandboxStatus {
   SANDBOX_STATUS_FAILED = 7;
 }
 
+// CPU architecture a sandbox runs on.
+enum Architecture {
+  ARCHITECTURE_UNSPECIFIED = 0;
+  ARCHITECTURE_AMD64 = 1;
+  ARCHITECTURE_ARM64 = 2;
+}
+
 // Compute resources for a sandbox. Every field is optional; leave a field unset
 // to take the server's default for that dimension. The defaults are currently
 // chosen by the server and not pinned here.
@@ -183,6 +190,9 @@ message Sandbox {
   // sandbox was created without one. Returned by GetSandbox and ListSandboxes
   // so callers can show or filter on the label they chose.
   optional string name = 17;
+
+  // The architecture the sandbox runs on, resolved by the server. Always set.
+  Architecture architecture = 18;
 }
 
 // Bytes transferred over the sandbox's primary network interface. Ingress and
@@ -272,6 +282,9 @@ message CreateSandboxRequest {
   // Configuration applied to every command run in the sandbox, including the CI
   // secrets to inject. Leave unset for a sandbox with no configuration.
   optional SandboxConfiguration configuration = 9;
+  // CPU architecture to run on. Leave unset for amd64. The image in `runtime`
+  // must publish a variant for this architecture.
+  optional Architecture architecture = 10;
 }
 
 message CreateSandboxResponse {

@@ -15,6 +15,9 @@
  */
 export type SandboxStatus = 'created' | 'assigned' | 'starting' | 'running' | 'finished' | 'cancelled' | 'failed'
 
+/** The CPU architecture a sandbox runs on, as a string instead of the wire enum. */
+export type Architecture = 'amd64' | 'arm64'
+
 /**
  * Bytes transferred over the sandbox's primary network interface. This is only
  * reported once the sandbox reaches a terminal status, and only when a metering

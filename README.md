@@ -68,12 +68,25 @@ await sandbox.runCommand({cmd: 'sh', args: ['-c', 'psql "$DATABASE_URL" -c "sele
 - **Deleted secret:** each command reads the secret's current value when it starts, so a rotated value applies to the next command. If the secret was deleted after the sandbox was created, the command fails with `FailedPrecondition`. Create a new sandbox to recover.
 - **Output is not masked:** a command that prints the variable streams its value back to you.
 
+### Architecture
+
+Sandboxes run on `amd64` unless you ask for `arm64`. The image in `runtime` must publish a variant for the architecture you choose; a multi-platform image works on both. `sandbox.architecture` reports the architecture the sandbox actually runs on.
+
+```typescript
+const sandbox = await Sandbox.create(client, {
+  architecture: 'arm64',
+  runtime: {imageRef: 'node:24'},
+})
+
+console.log(sandbox.architecture) // 'arm64'
+```
+
 ## Beta Surface
 
 This beta package currently includes:
 
 - `createClient`
-- `Sandbox.create` (including CI secrets), `Sandbox.get`, `Sandbox.list`, `Sandbox.listAll`
+- `Sandbox.create` (including CI secrets and `architecture`), `Sandbox.get`, `Sandbox.list`, `Sandbox.listAll`
 - `sandbox.stop`, `sandbox.kill`, `sandbox.setTimeout`, `sandbox.runCommand`, `sandbox.fs`
 - `SandboxCommandExecution.wait`, `logs`, `output`, `stdout`, and `stderr`
 - `FileSystem` helpers for common file operations
