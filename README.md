@@ -78,7 +78,7 @@ const sandbox = await Sandbox.create(client, {architecture: 'arm64'})
 console.log(sandbox.architecture) // 'arm64'
 ```
 
-A custom `runtime.imageRef` must publish a `linux/arm64` variant. If it doesn't, create succeeds but the sandbox ends in the `failed` status when it boots.
+A custom `runtime.imageRef` must be hosted on `registry.depot.dev` on either architecture; any other registry fails create with `InvalidArgument`. For `arm64`, the image must also publish a `linux/arm64` variant. If it doesn't, create succeeds but the sandbox ends in the `failed` status when it boots.
 
 ## Beta Surface
 
