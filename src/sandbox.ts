@@ -517,8 +517,8 @@ export interface CreateSandboxOpts {
   /** Configuration for every command, including the org CI secrets to inject. */
   configuration?: SandboxConfiguration
   /**
-   * CPU architecture to run on. Defaults to `amd64`. The image in `runtime` must publish a variant for the
-   * architecture you choose.
+   * CPU architecture to run on. Defaults to `amd64`. The default image supports both; a custom `runtime` image needs a
+   * variant for the architecture you choose, or the sandbox fails at boot.
    */
   architecture?: Architecture
 }

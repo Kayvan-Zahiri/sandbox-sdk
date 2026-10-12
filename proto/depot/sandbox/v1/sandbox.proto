@@ -95,10 +95,14 @@ enum SandboxStatus {
   SANDBOX_STATUS_FAILED = 7;
 }
 
-// CPU architecture a sandbox runs on.
+// CPU architecture of the machine a sandbox runs on.
 enum Architecture {
+  // Default zero value. On a create request it means x86-64; a returned
+  // sandbox always carries the architecture it was placed on.
   ARCHITECTURE_UNSPECIFIED = 0;
+  // x86-64.
   ARCHITECTURE_AMD64 = 1;
+  // 64-bit ARM.
   ARCHITECTURE_ARM64 = 2;
 }
 
@@ -191,7 +195,7 @@ message Sandbox {
   // so callers can show or filter on the label they chose.
   optional string name = 17;
 
-  // The architecture the sandbox runs on, resolved by the server. Always set.
+  // CPU architecture of the machine the sandbox runs on. Always populated.
   Architecture architecture = 18;
 }
 
@@ -282,8 +286,8 @@ message CreateSandboxRequest {
   // Configuration applied to every command run in the sandbox, including the CI
   // secrets to inject. Leave unset for a sandbox with no configuration.
   optional SandboxConfiguration configuration = 9;
-  // CPU architecture to run on. Leave unset for amd64. The image in `runtime`
-  // must publish a variant for this architecture.
+  // CPU architecture to run the sandbox on. The image in `runtime` must have a
+  // variant for it; the default image does. Default: ARCHITECTURE_AMD64.
   optional Architecture architecture = 10;
 }
 

@@ -267,7 +267,7 @@ export type Sandbox = Message<'depot.sandbox.v1.Sandbox'> & {
   name?: string
 
   /**
-   * The architecture the sandbox runs on, resolved by the server. Always set.
+   * CPU architecture of the machine the sandbox runs on. Always populated.
    *
    * @generated from field: depot.sandbox.v1.Architecture architecture = 18;
    */
@@ -476,8 +476,8 @@ export type CreateSandboxRequest = Message<'depot.sandbox.v1.CreateSandboxReques
   configuration?: SandboxConfiguration
 
   /**
-   * CPU architecture to run on. Leave unset for amd64. The image in `runtime`
-   * must publish a variant for this architecture.
+   * CPU architecture to run the sandbox on. The image in `runtime` must have a
+   * variant for it; the default image does. Default: ARCHITECTURE_AMD64.
    *
    * @generated from field: optional depot.sandbox.v1.Architecture architecture = 10;
    */
@@ -871,22 +871,29 @@ export enum SandboxStatus {
 export const SandboxStatusSchema: GenEnum<SandboxStatus> = /*@__PURE__*/ enumDesc(file_depot_sandbox_v1_sandbox, 0)
 
 /**
- * CPU architecture a sandbox runs on.
+ * CPU architecture of the machine a sandbox runs on.
  *
  * @generated from enum depot.sandbox.v1.Architecture
  */
 export enum Architecture {
   /**
+   * Default zero value. On a create request it means x86-64; a returned
+   * sandbox always carries the architecture it was placed on.
+   *
    * @generated from enum value: ARCHITECTURE_UNSPECIFIED = 0;
    */
   UNSPECIFIED = 0,
 
   /**
+   * x86-64.
+   *
    * @generated from enum value: ARCHITECTURE_AMD64 = 1;
    */
   AMD64 = 1,
 
   /**
+   * 64-bit ARM.
+   *
    * @generated from enum value: ARCHITECTURE_ARM64 = 2;
    */
   ARM64 = 2,

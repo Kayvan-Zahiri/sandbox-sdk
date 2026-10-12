@@ -70,16 +70,15 @@ await sandbox.runCommand({cmd: 'sh', args: ['-c', 'psql "$DATABASE_URL" -c "sele
 
 ### Architecture
 
-Sandboxes run on `amd64` unless you ask for `arm64`. The image in `runtime` must publish a variant for the architecture you choose; a multi-platform image works on both. `sandbox.architecture` reports the architecture the sandbox actually runs on.
+Sandboxes run on `amd64` unless you ask for `arm64`. Without a `runtime`, an `arm64` sandbox boots Depot's arm64 base image. `sandbox.architecture` reports the architecture the sandbox runs on.
 
 ```typescript
-const sandbox = await Sandbox.create(client, {
-  architecture: 'arm64',
-  runtime: {imageRef: 'node:24'},
-})
+const sandbox = await Sandbox.create(client, {architecture: 'arm64'})
 
 console.log(sandbox.architecture) // 'arm64'
 ```
+
+A custom `runtime.imageRef` must publish a `linux/arm64` variant. If it doesn't, create succeeds but the sandbox ends in the `failed` status when it boots.
 
 ## Beta Surface
 
