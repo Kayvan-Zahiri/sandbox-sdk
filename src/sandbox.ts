@@ -6,6 +6,7 @@ import {_commandInternals, type SandboxCommandExecution} from './command.js'
 import {FileSystem} from './filesystem.js'
 import type {SandboxCommandExecutionEvent} from './gen/depot/sandbox/v1/command_pb.js'
 import {
+  Architecture as ArchitectureProto,
   ListSandboxesRequest_FilterSchema,
   RuntimeSchema,
   SandboxConfigurationSchema,
@@ -18,6 +19,7 @@ import {
 } from './gen/depot/sandbox/v1/sandbox_pb.js'
 import {SandboxTailnet} from './tailnet.js'
 import type {
+  Architecture,
   ListFilter,
   NetworkUsage,
   Pagination,
@@ -43,6 +45,7 @@ export class Sandbox {
   protected _status: SandboxStatus | undefined
   protected _resources: Resources | undefined
   protected _runtime: Runtime | undefined
+  protected _architecture: Architecture | undefined
   protected _createdAt: Date | undefined
   protected _startedAt: Date | undefined
   protected _stoppedAt: Date | undefined
@@ -79,6 +82,11 @@ export class Sandbox {
   /** The runtime the server actually resolved for this sandbox. */
   get runtime(): Runtime | undefined {
     return this._runtime
+  }
+
+  /** The CPU architecture the sandbox runs on. Undefined only from a server that predates the field. */
+  get architecture(): Architecture | undefined {
+    return this._architecture
   }
 
   /** When the sandbox was created. Always set. */
@@ -151,6 +159,7 @@ export class Sandbox {
       timeoutMinutes: opts.timeoutMinutes,
       disableTailnet: opts.disableTailnet,
       configuration: opts.configuration !== undefined ? configurationToProto(opts.configuration) : undefined,
+      architecture: opts.architecture !== undefined ? architectureToProto(opts.architecture) : undefined,
     })
     const sandbox = response.sandbox
     if (!sandbox) {
@@ -434,6 +443,7 @@ export class Sandbox {
     this._status = sandboxStatusFromProto(sandbox.status)
     this._resources = resourcesFromProto(sandbox)
     this._runtime = runtimeFromProto(sandbox)
+    this._architecture = architectureFromProto(sandbox.architecture)
     this._createdAt = timestampToDate(sandbox.createdAt)
     this._startedAt = timestampToDate(sandbox.startedAt)
     this._stoppedAt = timestampToDate(sandbox.stoppedAt)
@@ -506,6 +516,8 @@ export interface CreateSandboxOpts {
   disableTailnet?: boolean
   /** Configuration for every command, including the org CI secrets to inject. */
   configuration?: SandboxConfiguration
+  /** CPU architecture to run on. Defaults to `amd64`. A custom `runtime` image without a matching variant fails at boot. */
+  architecture?: Architecture
 }
 
 /** Options for {@link Sandbox.setTimeout}. */
@@ -565,6 +577,22 @@ function runtimeToProto(runtime: Runtime): RuntimeProto {
     return create(RuntimeSchema, {runtime: {case: 'named', value: runtime.named}})
   }
   return create(RuntimeSchema, {runtime: {case: 'imageRef', value: runtime.imageRef}})
+}
+
+function architectureToProto(architecture: Architecture): ArchitectureProto {
+  const value = ArchitectureProto[architecture.toUpperCase() as keyof typeof ArchitectureProto]
+  // Only reachable when a caller forces an invalid value through a cast.
+  if (value === undefined) {
+    throw new TypeError(`unknown Architecture: ${architecture}`)
+  }
+  return value
+}
+
+// Like sandboxStatusFromProto: UNSPECIFIED and values newer than this build map to undefined.
+function architectureFromProto(architecture: ArchitectureProto): Architecture | undefined {
+  if (architecture === ArchitectureProto.UNSPECIFIED) return undefined
+  const name = ArchitectureProto[architecture]
+  return name === undefined ? undefined : (name.toLowerCase() as Architecture)
 }
 
 function resourcesFromProto(sandbox: SandboxProto): Resources | undefined {
