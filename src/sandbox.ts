@@ -4,7 +4,10 @@ import {Code, ConnectError} from '@connectrpc/connect'
 import type {SandboxClient} from './client.js'
 import {_commandInternals, type SandboxCommandExecution} from './command.js'
 import {FileSystem} from './filesystem.js'
-import type {SandboxCommandExecutionEvent} from './gen/depot/sandbox/v1/command_pb.js'
+import type {
+  SandboxCommandLogEntry as LogEntryProto,
+  SandboxCommandExecutionEvent,
+} from './gen/depot/sandbox/v1/command_pb.js'
 import {
   Architecture as ArchitectureProto,
   ListSandboxesRequest_FilterSchema,
@@ -24,11 +27,16 @@ import type {
   NetworkUsage,
   Pagination,
   PaginationResult,
+  ReadLogsOpts,
   Resources,
   RunCommandOpts,
   Runtime,
+  SandboxCommandLogBatch,
+  SandboxCommandLogEntry,
+  SandboxCommandLogs,
   SandboxConfiguration,
   SandboxStatus,
+  StreamLogsOpts,
 } from './types.js'
 
 /**
@@ -282,6 +290,44 @@ export class Sandbox {
     if (response.sandbox) this.applyProto(response.sandbox)
   }
 
+  /** Read a snapshot of retained command logs. An empty snapshot may still be pending. */
+  async readLogs(cmdId: string, opts: ReadLogsOpts = {}): Promise<SandboxCommandLogs> {
+    const response = await this.client.rpc.readCommandLogs(
+      {
+        sandbox: {selector: {case: 'id', value: this.sandboxId}},
+        cmdId,
+        limit: opts.limit,
+      },
+      {signal: opts.signal, timeoutMs: opts.timeoutMs},
+    )
+    return {entries: response.entries.map(commandLogEntry), complete: response.complete, truncated: response.truncated}
+  }
+
+  /** Replay retained Tail records, then follow new output until the platform reports completion.
+   * Breaking iteration cancels the upstream subscription. Platform resets fail
+   * the stream; use readLogs() to retrieve historical output.
+   */
+  async *streamLogs(cmdId: string, opts: StreamLogsOpts = {}): AsyncGenerator<SandboxCommandLogBatch> {
+    const controller = new AbortController()
+    const signal = opts.signal ? AbortSignal.any([opts.signal, controller.signal]) : controller.signal
+    let complete = false
+    try {
+      for await (const response of this.client.rpc.streamCommandLogs(
+        {
+          sandbox: {selector: {case: 'id', value: this.sandboxId}},
+          cmdId,
+        },
+        {signal, timeoutMs: opts.timeoutMs},
+      )) {
+        complete ||= response.complete
+        yield {entries: response.entries.map(commandLogEntry), complete: response.complete}
+      }
+      if (!complete) throw new ConnectError('Log stream closed before command completion', Code.Unavailable)
+    } finally {
+      controller.abort()
+    }
+  }
+
   /**
    * Run a command in this sandbox. This is a server-streaming call, and it
    * returns the {@link SandboxCommandExecution} as soon as the server reports
@@ -305,24 +351,11 @@ export class Sandbox {
    * concurrent `.logs()` callers each get an independent iterator backed by
    * the shared buffer.
    *
-   * Detached mode is in beta. When `opts.detached` is set, the command runs
-   * fire-and-forget: this call returns as soon as the server reports it
-   * started, and the command keeps running in the sandbox afterward. Its output
-   * is not retained and cannot be retrieved yet (reattach / log replay is a
-   * future API), so `logs()`, `output()`, and `wait()` on the returned
-   * execution throw, and the SDK logs a warning when detached is used.
+   * Detached commands keep running after this method returns. Read their retained
+   * output with readLogs() or follow it with streamLogs(). Execution-object
+   * logs(), output(), and wait() remain unavailable in detached mode.
    */
   async runCommand(opts: RunCommandOpts): Promise<SandboxCommandExecution> {
-    if (opts.detached) {
-      // Detached is beta and one-way: we launch the command and return, but its
-      // output is never streamed or stored, so there is nothing for
-      // logs()/output()/wait() to read. Warn rather than reject so callers can
-      // start using it, but make the limitation impossible to miss.
-      console.warn(
-        '[depot/sandbox] detached commands are in beta: output is not retained and cannot be retrieved yet; ' +
-          'logs(), output(), and wait() are unavailable on the returned command',
-      )
-    }
     const stream = this.client.rpc.runCommand({
       sandbox: {selector: {case: 'id', value: this.sandboxId}},
       cmd: opts.cmd,
@@ -703,4 +736,17 @@ function filterToProto(filter: ListFilter): ListSandboxesFilterProto {
     createdAfter: filter.createdAfter !== undefined ? timestampFromDate(filter.createdAfter) : undefined,
     createdBefore: filter.createdBefore !== undefined ? timestampFromDate(filter.createdBefore) : undefined,
   })
+}
+
+function commandLogEntry(entry: LogEntryProto): SandboxCommandLogEntry {
+  if (entry.stream !== 'stdout' && entry.stream !== 'stderr') {
+    throw new ConnectError('Unknown command log channel', Code.DataLoss)
+  }
+  if (!entry.timestamp) throw new ConnectError('Command log timestamp is missing', Code.DataLoss)
+  return {
+    data: entry.data,
+    stream: entry.stream,
+    timestamp: timestampDate(entry.timestamp),
+    lineNumber: entry.lineNumber,
+  }
 }

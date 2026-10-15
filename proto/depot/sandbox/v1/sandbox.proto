@@ -37,9 +37,14 @@ service SandboxService {
   // Started event and ends with Finished (or terminates with a Connect error).
   // Stdout/stderr arrive as raw bytes alongside the legacy string oneof.
   // Detached mode (`detached=true`) is in beta: the server ends the stream right
-  // after Started and the command keeps running in the sandbox, but its output
-  // is not retained and can't be retrieved yet.
+  // after Started and the command keeps running in the sandbox, and its retained output is available
+  // through ReadCommandLogs and StreamCommandLogs.
   rpc RunCommand(RunCommandRequest) returns (stream SandboxCommandExecutionEvent);
+
+  // Read retained command log records and their current completion state.
+  rpc ReadCommandLogs(ReadCommandLogsRequest) returns (ReadCommandLogsResponse);
+  // Replay retained command logs and follow new records until command output completes.
+  rpc StreamCommandLogs(StreamCommandLogsRequest) returns (stream StreamCommandLogsResponse);
 
   // File system access. These methods give a caller a node:fs/promises-shaped
   // view of the sandbox's file system. Their messages and enums are defined in

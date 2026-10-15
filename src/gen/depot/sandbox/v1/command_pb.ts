@@ -16,7 +16,7 @@ import {file_depot_sandbox_v1_refs} from './refs_pb.js'
 export const file_depot_sandbox_v1_command: GenFile =
   /*@__PURE__*/
   fileDesc(
-    'Ch5kZXBvdC9zYW5kYm94L3YxL2NvbW1hbmQucHJvdG8SEGRlcG90LnNhbmRib3gudjEimAQKF1NhbmRib3hDb21tYW5kRXhlY3V0aW9uEg4KBmNtZF9pZBgBIAEoCRISCgpzYW5kYm94X2lkGAIgASgJEgsKA2NtZBgDIAEoCRIMCgRhcmdzGAQgAygJEhAKA2N3ZBgFIAEoCUgAiAEBEj8KA2VudhgGIAMoCzIyLmRlcG90LnNhbmRib3gudjEuU2FuZGJveENvbW1hbmRFeGVjdXRpb24uRW52RW50cnkSDAoEc3VkbxgHIAEoCBIQCghkZXRhY2hlZBgIIAEoCBI/CgZzdGF0dXMYCSABKA4yLy5kZXBvdC5zYW5kYm94LnYxLlNhbmRib3hDb21tYW5kRXhlY3V0aW9uU3RhdHVzEi4KCnN0YXJ0ZWRfYXQYCiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEjQKC2ZpbmlzaGVkX2F0GAsgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcEgBiAEBEhYKCWV4aXRfY29kZRgMIAEoBUgCiAEBEhwKFHN0ZG91dF9ieXRlc19lbWl0dGVkGA0gASgDEhwKFHN0ZGVycl9ieXRlc19lbWl0dGVkGA4gASgDGioKCEVudkVudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAFCBgoEX2N3ZEIOCgxfZmluaXNoZWRfYXRCDAoKX2V4aXRfY29kZSK8BwocU2FuZGJveENvbW1hbmRFeGVjdXRpb25FdmVudBJJCgdzdGFydGVkGAEgASgLMjYuZGVwb3Quc2FuZGJveC52MS5TYW5kYm94Q29tbWFuZEV4ZWN1dGlvbkV2ZW50LlN0YXJ0ZWRIABJMCgZzdGRvdXQYAiABKAsyOi5kZXBvdC5zYW5kYm94LnYxLlNhbmRib3hDb21tYW5kRXhlY3V0aW9uRXZlbnQuU3Rkb3V0Qnl0ZXNIABJMCgZzdGRlcnIYAyABKAsyOi5kZXBvdC5zYW5kYm94LnYxLlNhbmRib3hDb21tYW5kRXhlY3V0aW9uRXZlbnQuU3RkZXJyQnl0ZXNIABJLCghmaW5pc2hlZBgEIAEoCzI3LmRlcG90LnNhbmRib3gudjEuU2FuZGJveENvbW1hbmRFeGVjdXRpb25FdmVudC5GaW5pc2hlZEgAEkUKBWVycm9yGAUgASgLMjQuZGVwb3Quc2FuZGJveC52MS5TYW5kYm94Q29tbWFuZEV4ZWN1dGlvbkV2ZW50LkVycm9ySAASUgoHZXZpY3RlZBgGIAEoCzI/LmRlcG90LnNhbmRib3gudjEuU2FuZGJveENvbW1hbmRFeGVjdXRpb25FdmVudC5FdmljdGVkRWFybHlEYXRhSAAaSQoHU3RhcnRlZBIOCgZjbWRfaWQYASABKAkSLgoKc3RhcnRlZF9hdBgCIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAaXwoLU3Rkb3V0Qnl0ZXMSDAoEZGF0YRgBIAEoDBITCgtieXRlX29mZnNldBgCIAEoAxItCgl0aW1lc3RhbXAYAyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wGl8KC1N0ZGVyckJ5dGVzEgwKBGRhdGEYASABKAwSEwoLYnl0ZV9vZmZzZXQYAiABKAMSLQoJdGltZXN0YW1wGAMgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBpOCghGaW5pc2hlZBIRCglleGl0X2NvZGUYASABKAUSLwoLZmluaXNoZWRfYXQYAiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wGhcKBUVycm9yEg4KBnJlYXNvbhgBIAEoCRpOChBFdmljdGVkRWFybHlEYXRhEhwKFGRyb3BwZWRfYnl0ZXNfc3Rkb3V0GAEgASgDEhwKFGRyb3BwZWRfYnl0ZXNfc3RkZXJyGAIgASgDQgcKBWV2ZW50Ip4CChFSdW5Db21tYW5kUmVxdWVzdBItCgdzYW5kYm94GAEgASgLMhwuZGVwb3Quc2FuZGJveC52MS5TYW5kYm94UmVmEgsKA2NtZBgCIAEoCRIMCgRhcmdzGAMgAygJEhAKA2N3ZBgEIAEoCUgAiAEBEjkKA2VudhgFIAMoCzIsLmRlcG90LnNhbmRib3gudjEuUnVuQ29tbWFuZFJlcXVlc3QuRW52RW50cnkSEQoEc3VkbxgGIAEoCEgBiAEBEhUKCGRldGFjaGVkGAcgASgISAKIAQEaKgoIRW52RW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4AUIGCgRfY3dkQgcKBV9zdWRvQgsKCV9kZXRhY2hlZCq2AgodU2FuZGJveENvbW1hbmRFeGVjdXRpb25TdGF0dXMSMAosU0FOREJPWF9DT01NQU5EX0VYRUNVVElPTl9TVEFUVVNfVU5TUEVDSUZJRUQQABIsCihTQU5EQk9YX0NPTU1BTkRfRVhFQ1VUSU9OX1NUQVRVU19QRU5ESU5HEAESLAooU0FOREJPWF9DT01NQU5EX0VYRUNVVElPTl9TVEFUVVNfUlVOTklORxACEi0KKVNBTkRCT1hfQ09NTUFORF9FWEVDVVRJT05fU1RBVFVTX0ZJTklTSEVEEAMSKwonU0FOREJPWF9DT01NQU5EX0VYRUNVVElPTl9TVEFUVVNfRkFJTEVEEAQSKwonU0FOREJPWF9DT01NQU5EX0VYRUNVVElPTl9TVEFUVVNfS0lMTEVEEAViBnByb3RvMw',
+    'Ch5kZXBvdC9zYW5kYm94L3YxL2NvbW1hbmQucHJvdG8SEGRlcG90LnNhbmRib3gudjEimAQKF1NhbmRib3hDb21tYW5kRXhlY3V0aW9uEg4KBmNtZF9pZBgBIAEoCRISCgpzYW5kYm94X2lkGAIgASgJEgsKA2NtZBgDIAEoCRIMCgRhcmdzGAQgAygJEhAKA2N3ZBgFIAEoCUgAiAEBEj8KA2VudhgGIAMoCzIyLmRlcG90LnNhbmRib3gudjEuU2FuZGJveENvbW1hbmRFeGVjdXRpb24uRW52RW50cnkSDAoEc3VkbxgHIAEoCBIQCghkZXRhY2hlZBgIIAEoCBI/CgZzdGF0dXMYCSABKA4yLy5kZXBvdC5zYW5kYm94LnYxLlNhbmRib3hDb21tYW5kRXhlY3V0aW9uU3RhdHVzEi4KCnN0YXJ0ZWRfYXQYCiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEjQKC2ZpbmlzaGVkX2F0GAsgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcEgBiAEBEhYKCWV4aXRfY29kZRgMIAEoBUgCiAEBEhwKFHN0ZG91dF9ieXRlc19lbWl0dGVkGA0gASgDEhwKFHN0ZGVycl9ieXRlc19lbWl0dGVkGA4gASgDGioKCEVudkVudHJ5EgsKA2tleRgBIAEoCRINCgV2YWx1ZRgCIAEoCToCOAFCBgoEX2N3ZEIOCgxfZmluaXNoZWRfYXRCDAoKX2V4aXRfY29kZSK8BwocU2FuZGJveENvbW1hbmRFeGVjdXRpb25FdmVudBJJCgdzdGFydGVkGAEgASgLMjYuZGVwb3Quc2FuZGJveC52MS5TYW5kYm94Q29tbWFuZEV4ZWN1dGlvbkV2ZW50LlN0YXJ0ZWRIABJMCgZzdGRvdXQYAiABKAsyOi5kZXBvdC5zYW5kYm94LnYxLlNhbmRib3hDb21tYW5kRXhlY3V0aW9uRXZlbnQuU3Rkb3V0Qnl0ZXNIABJMCgZzdGRlcnIYAyABKAsyOi5kZXBvdC5zYW5kYm94LnYxLlNhbmRib3hDb21tYW5kRXhlY3V0aW9uRXZlbnQuU3RkZXJyQnl0ZXNIABJLCghmaW5pc2hlZBgEIAEoCzI3LmRlcG90LnNhbmRib3gudjEuU2FuZGJveENvbW1hbmRFeGVjdXRpb25FdmVudC5GaW5pc2hlZEgAEkUKBWVycm9yGAUgASgLMjQuZGVwb3Quc2FuZGJveC52MS5TYW5kYm94Q29tbWFuZEV4ZWN1dGlvbkV2ZW50LkVycm9ySAASUgoHZXZpY3RlZBgGIAEoCzI/LmRlcG90LnNhbmRib3gudjEuU2FuZGJveENvbW1hbmRFeGVjdXRpb25FdmVudC5FdmljdGVkRWFybHlEYXRhSAAaSQoHU3RhcnRlZBIOCgZjbWRfaWQYASABKAkSLgoKc3RhcnRlZF9hdBgCIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXAaXwoLU3Rkb3V0Qnl0ZXMSDAoEZGF0YRgBIAEoDBITCgtieXRlX29mZnNldBgCIAEoAxItCgl0aW1lc3RhbXAYAyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wGl8KC1N0ZGVyckJ5dGVzEgwKBGRhdGEYASABKAwSEwoLYnl0ZV9vZmZzZXQYAiABKAMSLQoJdGltZXN0YW1wGAMgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBpOCghGaW5pc2hlZBIRCglleGl0X2NvZGUYASABKAUSLwoLZmluaXNoZWRfYXQYAiABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wGhcKBUVycm9yEg4KBnJlYXNvbhgBIAEoCRpOChBFdmljdGVkRWFybHlEYXRhEhwKFGRyb3BwZWRfYnl0ZXNfc3Rkb3V0GAEgASgDEhwKFGRyb3BwZWRfYnl0ZXNfc3RkZXJyGAIgASgDQgcKBWV2ZW50Ip4CChFSdW5Db21tYW5kUmVxdWVzdBItCgdzYW5kYm94GAEgASgLMhwuZGVwb3Quc2FuZGJveC52MS5TYW5kYm94UmVmEgsKA2NtZBgCIAEoCRIMCgRhcmdzGAMgAygJEhAKA2N3ZBgEIAEoCUgAiAEBEjkKA2VudhgFIAMoCzIsLmRlcG90LnNhbmRib3gudjEuUnVuQ29tbWFuZFJlcXVlc3QuRW52RW50cnkSEQoEc3VkbxgGIAEoCEgBiAEBEhUKCGRldGFjaGVkGAcgASgISAKIAQEaKgoIRW52RW50cnkSCwoDa2V5GAEgASgJEg0KBXZhbHVlGAIgASgJOgI4AUIGCgRfY3dkQgcKBV9zdWRvQgsKCV9kZXRhY2hlZCKPAQoWU2FuZGJveENvbW1hbmRMb2dFbnRyeRIMCgRkYXRhGAEgASgMEg4KBnN0cmVhbRgCIAEoCRItCgl0aW1lc3RhbXAYAyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhgKC2xpbmVfbnVtYmVyGAQgASgESACIAQFCDgoMX2xpbmVfbnVtYmVyInUKFlJlYWRDb21tYW5kTG9nc1JlcXVlc3QSLQoHc2FuZGJveBgBIAEoCzIcLmRlcG90LnNhbmRib3gudjEuU2FuZGJveFJlZhIOCgZjbWRfaWQYAiABKAkSEgoFbGltaXQYAyABKA1IAIgBAUIICgZfbGltaXQieQoXUmVhZENvbW1hbmRMb2dzUmVzcG9uc2USOQoHZW50cmllcxgBIAMoCzIoLmRlcG90LnNhbmRib3gudjEuU2FuZGJveENvbW1hbmRMb2dFbnRyeRIQCghjb21wbGV0ZRgCIAEoCBIRCgl0cnVuY2F0ZWQYAyABKAgiWQoYU3RyZWFtQ29tbWFuZExvZ3NSZXF1ZXN0Ei0KB3NhbmRib3gYASABKAsyHC5kZXBvdC5zYW5kYm94LnYxLlNhbmRib3hSZWYSDgoGY21kX2lkGAIgASgJImgKGVN0cmVhbUNvbW1hbmRMb2dzUmVzcG9uc2USOQoHZW50cmllcxgBIAMoCzIoLmRlcG90LnNhbmRib3gudjEuU2FuZGJveENvbW1hbmRMb2dFbnRyeRIQCghjb21wbGV0ZRgCIAEoCCq2AgodU2FuZGJveENvbW1hbmRFeGVjdXRpb25TdGF0dXMSMAosU0FOREJPWF9DT01NQU5EX0VYRUNVVElPTl9TVEFUVVNfVU5TUEVDSUZJRUQQABIsCihTQU5EQk9YX0NPTU1BTkRfRVhFQ1VUSU9OX1NUQVRVU19QRU5ESU5HEAESLAooU0FOREJPWF9DT01NQU5EX0VYRUNVVElPTl9TVEFUVVNfUlVOTklORxACEi0KKVNBTkRCT1hfQ09NTUFORF9FWEVDVVRJT05fU1RBVFVTX0ZJTklTSEVEEAMSKwonU0FOREJPWF9DT01NQU5EX0VYRUNVVElPTl9TVEFUVVNfRkFJTEVEEAQSKwonU0FOREJPWF9DT01NQU5EX0VYRUNVVElPTl9TVEFUVVNfS0lMTEVEEAViBnByb3RvMw',
     [file_depot_sandbox_v1_refs, file_google_protobuf_timestamp],
   )
 
@@ -80,9 +80,8 @@ export type SandboxCommandExecution = Message<'depot.sandbox.v1.SandboxCommandEx
   sudo: boolean
 
   /**
-   * Whether the command was run detached. Detached mode is in beta: the command
-   * runs fire-and-forget and its output is not retained, so it can't be
-   * retrieved through this API yet.
+   * Whether the command was run detached. Retained output is available through
+   * ReadCommandLogs and StreamCommandLogs.
    *
    * @generated from field: bool detached = 8;
    */
@@ -478,6 +477,173 @@ export type RunCommandRequest = Message<'depot.sandbox.v1.RunCommandRequest'> & 
 export const RunCommandRequestSchema: GenMessage<RunCommandRequest> =
   /*@__PURE__*/
   messageDesc(file_depot_sandbox_v1_command, 2)
+
+/**
+ * A retained log record. Line delimiters are removed during capture; these
+ * records are not a byte-for-byte replay of the process output stream.
+ *
+ * @generated from message depot.sandbox.v1.SandboxCommandLogEntry
+ */
+export type SandboxCommandLogEntry = Message<'depot.sandbox.v1.SandboxCommandLogEntry'> & {
+  /**
+   * Raw log bytes. The contents are not guaranteed to be valid UTF-8.
+   *
+   * @generated from field: bytes data = 1;
+   */
+  data: Uint8Array
+
+  /**
+   * Output channel. Can be "stdout" or "stderr".
+   *
+   * @generated from field: string stream = 2;
+   */
+  stream: string
+
+  /**
+   * Time the record was captured, in RFC 3339 format.
+   *
+   * @generated from field: google.protobuf.Timestamp timestamp = 3;
+   */
+  timestamp?: Timestamp
+
+  /**
+   * Producer line number within the channel.
+   *
+   * @generated from field: optional uint64 line_number = 4;
+   */
+  lineNumber?: bigint
+}
+
+/**
+ * Describes the message depot.sandbox.v1.SandboxCommandLogEntry.
+ * Use `create(SandboxCommandLogEntrySchema)` to create a new message.
+ */
+export const SandboxCommandLogEntrySchema: GenMessage<SandboxCommandLogEntry> =
+  /*@__PURE__*/
+  messageDesc(file_depot_sandbox_v1_command, 3)
+
+/**
+ * @generated from message depot.sandbox.v1.ReadCommandLogsRequest
+ */
+export type ReadCommandLogsRequest = Message<'depot.sandbox.v1.ReadCommandLogsRequest'> & {
+  /**
+   * Sandbox that ran the command. Returned by CreateSandbox and GetSandbox.
+   *
+   * @generated from field: depot.sandbox.v1.SandboxRef sandbox = 1;
+   */
+  sandbox?: SandboxRef
+
+  /**
+   * Unique identifier for the command. Returned by RunCommand.
+   *
+   * @generated from field: string cmd_id = 2;
+   */
+  cmdId: string
+
+  /**
+   * Maximum number of records to return. Maximum: 10000. Default: 1000.
+   *
+   * @generated from field: optional uint32 limit = 3;
+   */
+  limit?: number
+}
+
+/**
+ * Describes the message depot.sandbox.v1.ReadCommandLogsRequest.
+ * Use `create(ReadCommandLogsRequestSchema)` to create a new message.
+ */
+export const ReadCommandLogsRequestSchema: GenMessage<ReadCommandLogsRequest> =
+  /*@__PURE__*/
+  messageDesc(file_depot_sandbox_v1_command, 4)
+
+/**
+ * @generated from message depot.sandbox.v1.ReadCommandLogsResponse
+ */
+export type ReadCommandLogsResponse = Message<'depot.sandbox.v1.ReadCommandLogsResponse'> & {
+  /**
+   * Retained records in timestamp order.
+   *
+   * @generated from field: repeated depot.sandbox.v1.SandboxCommandLogEntry entries = 1;
+   */
+  entries: SandboxCommandLogEntry[]
+
+  /**
+   * Whether the Log Platform has observed command output completion.
+   * A truncated response can still omit earlier output when this is true.
+   *
+   * @generated from field: bool complete = 2;
+   */
+  complete: boolean
+
+  /**
+   * Whether additional records were omitted from this response.
+   *
+   * @generated from field: bool truncated = 3;
+   */
+  truncated: boolean
+}
+
+/**
+ * Describes the message depot.sandbox.v1.ReadCommandLogsResponse.
+ * Use `create(ReadCommandLogsResponseSchema)` to create a new message.
+ */
+export const ReadCommandLogsResponseSchema: GenMessage<ReadCommandLogsResponse> =
+  /*@__PURE__*/
+  messageDesc(file_depot_sandbox_v1_command, 5)
+
+/**
+ * @generated from message depot.sandbox.v1.StreamCommandLogsRequest
+ */
+export type StreamCommandLogsRequest = Message<'depot.sandbox.v1.StreamCommandLogsRequest'> & {
+  /**
+   * Sandbox that ran the command. Returned by CreateSandbox and GetSandbox.
+   *
+   * @generated from field: depot.sandbox.v1.SandboxRef sandbox = 1;
+   */
+  sandbox?: SandboxRef
+
+  /**
+   * Unique identifier for the command. Returned by RunCommand.
+   *
+   * @generated from field: string cmd_id = 2;
+   */
+  cmdId: string
+}
+
+/**
+ * Describes the message depot.sandbox.v1.StreamCommandLogsRequest.
+ * Use `create(StreamCommandLogsRequestSchema)` to create a new message.
+ */
+export const StreamCommandLogsRequestSchema: GenMessage<StreamCommandLogsRequest> =
+  /*@__PURE__*/
+  messageDesc(file_depot_sandbox_v1_command, 6)
+
+/**
+ * @generated from message depot.sandbox.v1.StreamCommandLogsResponse
+ */
+export type StreamCommandLogsResponse = Message<'depot.sandbox.v1.StreamCommandLogsResponse'> & {
+  /**
+   * Retained or newly captured records. Empty for a silent command's completion.
+   *
+   * @generated from field: repeated depot.sandbox.v1.SandboxCommandLogEntry entries = 1;
+   */
+  entries: SandboxCommandLogEntry[]
+
+  /**
+   * Whether the Log Platform has observed command output completion.
+   *
+   * @generated from field: bool complete = 2;
+   */
+  complete: boolean
+}
+
+/**
+ * Describes the message depot.sandbox.v1.StreamCommandLogsResponse.
+ * Use `create(StreamCommandLogsResponseSchema)` to create a new message.
+ */
+export const StreamCommandLogsResponseSchema: GenMessage<StreamCommandLogsResponse> =
+  /*@__PURE__*/
+  messageDesc(file_depot_sandbox_v1_command, 7)
 
 /**
  * The lifecycle stage a command has reached. A command starts pending, begins
