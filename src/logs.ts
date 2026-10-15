@@ -3,7 +3,7 @@ import {Code, ConnectError} from '@connectrpc/connect'
 import type {SandboxClient} from './client.js'
 import type {SandboxLogEntry} from './gen/depot/sandbox/v1/logs_pb.js'
 
-export type LogSource = 'stdout' | 'stderr' | 'system'
+export type LogSource = 'stdout' | 'stderr' | 'system' | 'unknown'
 
 /** A retained record. Capture removes line delimiters; messages are UTF-8 text. */
 export interface LogEntry {
@@ -83,7 +83,7 @@ export class SandboxLogs {
 }
 
 function logEntry(entry: SandboxLogEntry): LogEntry {
-  if (!entry.timestamp || !['stdout', 'stderr', 'system'].includes(entry.source)) {
+  if (!entry.timestamp || !['stdout', 'stderr', 'system', 'unknown'].includes(entry.source)) {
     throw new ConnectError('Invalid sandbox log record', Code.DataLoss)
   }
   return {

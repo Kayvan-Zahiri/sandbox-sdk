@@ -127,3 +127,20 @@ test('logs.fetch validates dates before starting the request', async () => {
     await assert.rejects(Array.fromAsync(sb.logs.fetch({since: from, until})), TypeError)
   }
 })
+
+test('logs preserves and filters unknown customer output', async () => {
+  const sb = await sandbox({
+    async *fetchSandboxLogs(request) {
+      assert.equal(request.source, 'unknown')
+      yield {...record, source: 'unknown'}
+    },
+    async *tailSandboxLogs(request) {
+      assert.equal(request.source, 'unknown')
+      yield {...record, source: 'unknown'}
+    },
+  })
+  const fetched = await Array.fromAsync(sb.logs.fetch({since, until, source: 'unknown'}))
+  const latest = await Array.fromAsync(sb.logs.tail({source: 'unknown'}))
+  assert.equal(fetched[0]?.source, 'unknown')
+  assert.equal(latest[0]?.source, 'unknown')
+})

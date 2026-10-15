@@ -9,7 +9,7 @@ import "google/protobuf/timestamp.proto";
 message SandboxLogEntry {
   // Log message decoded as UTF-8 text. Capture removes line delimiters.
   string message = 1;
-  // Output source. Can be "stdout", "stderr", or "system".
+  // Output source. Can be "stdout", "stderr", or "unknown".
   string source = 2;
   // Time the record was captured, in RFC 3339 format.
   google.protobuf.Timestamp timestamp = 3;
@@ -26,7 +26,7 @@ message FetchSandboxLogsRequest {
   google.protobuf.Timestamp since = 2;
   // End of the requested time range, exclusive, in RFC 3339 format. Default: current time.
   google.protobuf.Timestamp until = 3;
-  // Output source. Can be "stdout", "stderr", or "system". Leave empty to include all sources.
+  // Output source. Can be "stdout", "stderr", "system", or "unknown". Leave empty to include all permitted sources. System records are unavailable.
   string source = 4;
   // Case-sensitive text contained in the message. Leave empty to include all messages.
   string search_text = 5;
@@ -37,6 +37,6 @@ message TailSandboxLogsRequest {
   SandboxRef sandbox = 1;
   // Number of recent records to return. Maximum: 20000. Default: 100.
   optional uint32 entries = 2;
-  // Output source. Can be "stdout", "stderr", or "system". Leave empty to include all sources.
+  // Output source. Can be "stdout", "stderr", "system", or "unknown". Leave empty to include all permitted sources. System records are unavailable.
   string source = 3;
 }

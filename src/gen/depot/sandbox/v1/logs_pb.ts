@@ -34,7 +34,7 @@ export type SandboxLogEntry = Message<'depot.sandbox.v1.SandboxLogEntry'> & {
   message: string
 
   /**
-   * Output source. Can be "stdout", "stderr", or "system".
+   * Output source. Can be "stdout", "stderr", or "unknown".
    *
    * @generated from field: string source = 2;
    */
@@ -96,7 +96,7 @@ export type FetchSandboxLogsRequest = Message<'depot.sandbox.v1.FetchSandboxLogs
   until?: Timestamp
 
   /**
-   * Output source. Can be "stdout", "stderr", or "system". Leave empty to include all sources.
+   * Output source. Can be "stdout", "stderr", "system", or "unknown". Leave empty to include all permitted sources. System records are unavailable.
    *
    * @generated from field: string source = 4;
    */
@@ -137,7 +137,7 @@ export type TailSandboxLogsRequest = Message<'depot.sandbox.v1.TailSandboxLogsRe
   entries?: number
 
   /**
-   * Output source. Can be "stdout", "stderr", or "system". Leave empty to include all sources.
+   * Output source. Can be "stdout", "stderr", "system", or "unknown". Leave empty to include all permitted sources. System records are unavailable.
    *
    * @generated from field: string source = 3;
    */

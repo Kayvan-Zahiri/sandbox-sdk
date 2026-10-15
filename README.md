@@ -209,8 +209,10 @@ for await (const entry of sandbox.logs.tail({entries: 20})) {
 ```
 
 `fetch()` queries `[since, until)` in chronological order. `until` defaults to
-the current time. Source can be `stdout`, `stderr`, or `system`; omitted source
-includes all public channels. `searchText` is a case-sensitive substring.
+the current time. Source can be `stdout`, `stderr`, `unknown`, or `system`; omitted source
+includes all permitted sources. `unknown` represents unspecified customer output.
+System records are staff-only and are never returned by these customer methods,
+even when `system` is requested as a filter. `searchText` is a case-sensitive substring.
 The maximum query range is 35 days; oversized queries fail with
 `RESOURCE_EXHAUSTED` rather than silently omit records.
 
