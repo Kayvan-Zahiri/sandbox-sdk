@@ -41,7 +41,8 @@ service SandboxService {
   // through ReadCommandLogs and StreamCommandLogs.
   rpc RunCommand(RunCommandRequest) returns (stream SandboxCommandExecutionEvent);
 
-  // Read retained command log records and their current completion state.
+  // Read completed command log records. Waits up to 250 ms for completion,
+  // then returns UNAVAILABLE if command output is still pending.
   rpc ReadCommandLogs(ReadCommandLogsRequest) returns (ReadCommandLogsResponse);
   // Replay retained command logs and follow new records until command output completes.
   rpc StreamCommandLogs(StreamCommandLogsRequest) returns (stream StreamCommandLogsResponse);

@@ -150,14 +150,24 @@ const snapshot = await sandbox.readLogs(command.cmdId, {limit: 1000})
 console.log(snapshot.complete, snapshot.truncated)
 ```
 
-`readLogs()` returns a direct snapshot, including historical records after Tail
-retention. Empty output with `complete: false` is pending. A completed snapshot
-can still be truncated. Each call replaces the previous snapshot; there is no
-historical page token. A new `streamLogs()` call replays records still held by
-Tail and can repeat output from a previous call. Platform resets, expired grants,
-and closure without completion throw instead of reporting success. Streams last
-at most four minutes. No automatic reconnect or historical-to-live handoff is
-performed. Use a direct snapshot for commands outside Tail retention.
+`readLogs()` returns completed retained records, including historical output after
+Tail retention. Each server attempt waits up to 250 ms for command EOF, returning
+`UNAVAILABLE` if output is still pending. The SDK retries that code after linear
+delays of 50 ms, 100 ms, 150 ms, and so on, without jitter. All requests and delays
+share a one-second budget; `timeoutMs` can shorten it. Each attempt receives the
+remaining deadline. Cancellation stops requests and backoff. If no retry fits the
+remaining budget, the last `UNAVAILABLE` is thrown. Other errors are not retried.
+
+A successful silent command has empty entries and `complete: true`. Completed
+output can still be truncated. Each retry replaces the previous snapshot; records
+are not appended or duplicated. There is no historical page token.
+
+A new `streamLogs()` call replays records still held by Tail and can repeat output
+from a previous call. Platform resets, expired grants, and closure without
+completion throw instead of reporting success. Streams last at most four minutes.
+No automatic reconnect or historical-to-live handoff is performed. Use a direct
+read for completed commands outside Tail retention and streaming for partial or
+long-running output.
 
 Records preserve binary bodies as `Uint8Array`, channel, timestamp, and line
 number. Capture removes line delimiters, so these records differ from the exact

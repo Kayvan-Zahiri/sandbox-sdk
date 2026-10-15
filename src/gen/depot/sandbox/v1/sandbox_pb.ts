@@ -990,7 +990,8 @@ export const SandboxService: GenService<{
     output: typeof SandboxCommandExecutionEventSchema
   }
   /**
-   * Read retained command log records and their current completion state.
+   * Read completed command log records. Waits up to 250 ms for completion,
+   * then returns UNAVAILABLE if command output is still pending.
    *
    * @generated from rpc depot.sandbox.v1.SandboxService.ReadCommandLogs
    */

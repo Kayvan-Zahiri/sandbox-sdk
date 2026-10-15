@@ -189,8 +189,8 @@ message ReadCommandLogsRequest {
 message ReadCommandLogsResponse {
   // Retained records in timestamp order.
   repeated SandboxCommandLogEntry entries = 1;
-  // Whether the Log Platform has observed command output completion.
-  // A truncated response can still omit earlier output when this is true.
+  // True when the Log Platform has observed command output completion.
+  // Successful reads are complete; a truncated response can still omit earlier output when this is true.
   bool complete = 2;
   // Whether additional records were omitted from this response.
   bool truncated = 3;

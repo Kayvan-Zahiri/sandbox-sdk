@@ -129,7 +129,7 @@ export interface SandboxCommandLogEntry {
   lineNumber?: bigint
 }
 
-/** A snapshot of retained output. Completion and truncation are independent. */
+/** Completed retained output. A successful result may still be truncated. */
 export interface SandboxCommandLogs {
   entries: SandboxCommandLogEntry[]
   complete: boolean
@@ -146,6 +146,7 @@ export interface ReadLogsOpts {
   /** Maximum records to return. Default: 1000. Maximum: 10000. */
   limit?: number
   signal?: AbortSignal
+  /** Total budget for requests and linear retry delays. Default and maximum: 1000 ms. */
   timeoutMs?: number
 }
 

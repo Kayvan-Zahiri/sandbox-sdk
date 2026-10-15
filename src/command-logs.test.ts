@@ -108,3 +108,85 @@ test('streamLogs forwards cancellation and deadline errors', async () => {
   controller.abort()
   await assert.rejects(stream.next())
 })
+
+test('readLogs uses linear 50ms delays and retries only unavailable', async () => {
+  let calls = 0
+  const called: number[] = []
+  const sdkClient = client({
+    readCommandLogs: () => {
+      called.push(performance.now())
+      if (++calls < 4) throw new ConnectError('pending', Code.Unavailable)
+      return {entries: [entry], complete: true}
+    },
+  })
+  const sandbox = await Sandbox.get(sdkClient, 'sb')
+  const result = await sandbox.readLogs('cmd')
+  assert.equal(result.complete, true)
+  assert.equal(calls, 4)
+  for (let i = 1; i < called.length; i++) assert.ok(called[i]! - called[i - 1]! >= i * 50 - 5)
+  calls = 0
+  sdkClient.rpc.readCommandLogs = async () => {
+    calls++
+    throw new ConnectError('denied', Code.PermissionDenied)
+  }
+  await assert.rejects(
+    sandbox.readLogs('cmd'),
+    (error: unknown) => error instanceof ConnectError && error.code === Code.PermissionDenied,
+  )
+  assert.equal(calls, 1)
+})
+
+test('readLogs shares its one-second budget across requests and backoff', async () => {
+  const sdkClient = client({})
+  const timeouts: number[] = []
+  sdkClient.rpc.readCommandLogs = async (_request, options) => {
+    timeouts.push(options!.timeoutMs!)
+    await new Promise((resolve) => setTimeout(resolve, Math.min(200, options!.timeoutMs!)))
+    throw new ConnectError('pending', Code.Unavailable)
+  }
+  const sandbox = await Sandbox.get(sdkClient, 'sb')
+  await assert.rejects(
+    sandbox.readLogs('cmd'),
+    (error: unknown) => error instanceof ConnectError && error.code === Code.Unavailable,
+  )
+  assert.ok(timeouts.length >= 2)
+  assert.ok(timeouts[0]! <= 1000)
+  for (let i = 1; i < timeouts.length; i++) assert.ok(timeouts[i]! < timeouts[i - 1]! - 190)
+})
+
+test('readLogs supports shorter budgets and cancels during backoff', async () => {
+  let calls = 0
+  const sdkClient = client({
+    readCommandLogs: () => {
+      calls++
+      throw new ConnectError('pending', Code.Unavailable)
+    },
+  })
+  const sandbox = await Sandbox.get(sdkClient, 'sb')
+  await assert.rejects(
+    sandbox.readLogs('cmd', {timeoutMs: 40}),
+    (error: unknown) => error instanceof ConnectError && error.code === Code.Unavailable,
+  )
+  assert.equal(calls, 1)
+  const controller = new AbortController()
+  const request = sandbox.readLogs('cmd', {signal: controller.signal})
+  setTimeout(() => controller.abort(), 20)
+  await assert.rejects(request, (error: unknown) => error instanceof ConnectError && error.code === Code.Canceled)
+  assert.equal(calls, 2)
+})
+
+test('readLogs surfaces the last unavailable when the final request exhausts the budget', async () => {
+  const sdkClient = client({})
+  let calls = 0
+  sdkClient.rpc.readCommandLogs = async (_request, options) => {
+    if (++calls === 1) throw new ConnectError('pending', Code.Unavailable)
+    await new Promise((resolve) => setTimeout(resolve, options!.timeoutMs!))
+    throw new ConnectError('deadline', Code.DeadlineExceeded)
+  }
+  const sandbox = await Sandbox.get(sdkClient, 'sb')
+  await assert.rejects(
+    sandbox.readLogs('cmd', {timeoutMs: 100}),
+    (error: unknown) => error instanceof ConnectError && error.code === Code.Unavailable,
+  )
+  assert.equal(calls, 2)
+})

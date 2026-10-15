@@ -568,8 +568,8 @@ export type ReadCommandLogsResponse = Message<'depot.sandbox.v1.ReadCommandLogsR
   entries: SandboxCommandLogEntry[]
 
   /**
-   * Whether the Log Platform has observed command output completion.
-   * A truncated response can still omit earlier output when this is true.
+   * True when the Log Platform has observed command output completion.
+   * Successful reads are complete; a truncated response can still omit earlier output when this is true.
    *
    * @generated from field: bool complete = 2;
    */

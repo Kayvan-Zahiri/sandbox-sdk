@@ -1,6 +1,7 @@
 import {create} from '@bufbuild/protobuf'
 import {timestampDate, timestampFromDate, type Timestamp} from '@bufbuild/protobuf/wkt'
 import {Code, ConnectError} from '@connectrpc/connect'
+import {setTimeout as delay} from 'node:timers/promises'
 import type {SandboxClient} from './client.js'
 import {_commandInternals, type SandboxCommandExecution} from './command.js'
 import {FileSystem} from './filesystem.js'
@@ -290,17 +291,51 @@ export class Sandbox {
     if (response.sandbox) this.applyProto(response.sandbox)
   }
 
-  /** Read a snapshot of retained command logs. An empty snapshot may still be pending. */
+  /** Read completed command logs, retrying unavailable output within one second. */
   async readLogs(cmdId: string, opts: ReadLogsOpts = {}): Promise<SandboxCommandLogs> {
-    const response = await this.client.rpc.readCommandLogs(
-      {
-        sandbox: {selector: {case: 'id', value: this.sandboxId}},
-        cmdId,
-        limit: opts.limit,
-      },
-      {signal: opts.signal, timeoutMs: opts.timeoutMs},
-    )
-    return {entries: response.entries.map(commandLogEntry), complete: response.complete, truncated: response.truncated}
+    const requestedTimeout = opts.timeoutMs ?? 1000
+    if (!Number.isFinite(requestedTimeout) || requestedTimeout <= 0) {
+      throw new ConnectError('timeoutMs must be positive and finite', Code.InvalidArgument)
+    }
+    const deadline = performance.now() + Math.min(requestedTimeout, 1000)
+    let retryDelay = 50
+    let unavailable: ConnectError | undefined
+    while (true) {
+      if (opts.signal?.aborted) throw ConnectError.from(opts.signal.reason, Code.Canceled)
+      const remaining = Math.ceil(deadline - performance.now())
+      if (remaining <= 0) throw unavailable ?? new ConnectError('Log read deadline exceeded', Code.DeadlineExceeded)
+      try {
+        const response = await this.client.rpc.readCommandLogs(
+          {
+            sandbox: {selector: {case: 'id', value: this.sandboxId}},
+            cmdId,
+            limit: opts.limit,
+          },
+          {signal: opts.signal, timeoutMs: remaining},
+        )
+        return {
+          entries: response.entries.map(commandLogEntry),
+          complete: response.complete,
+          truncated: response.truncated,
+        }
+      } catch (error) {
+        if (opts.signal?.aborted) throw ConnectError.from(opts.signal.reason, Code.Canceled)
+        const failure = ConnectError.from(error)
+        if (failure.code !== Code.Unavailable) {
+          if (failure.code === Code.DeadlineExceeded && unavailable && performance.now() >= deadline - 1)
+            throw unavailable
+          throw failure
+        }
+        unavailable = failure
+      }
+      if (retryDelay >= deadline - performance.now()) throw unavailable
+      try {
+        await delay(retryDelay, undefined, {signal: opts.signal})
+      } catch (error) {
+        throw ConnectError.from(opts.signal?.reason ?? error, Code.Canceled)
+      }
+      retryDelay += 50
+    }
   }
 
   /** Replay retained Tail records, then follow new output until the platform reports completion.
