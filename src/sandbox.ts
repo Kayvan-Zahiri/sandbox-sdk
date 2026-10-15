@@ -339,10 +339,14 @@ export class Sandbox {
   }
 
   /** Replay retained Tail records, then follow new output until the platform reports completion.
+   * Accepts the command returned by runCommand() or its cmdId.
    * Breaking iteration cancels the upstream subscription. Platform resets fail
    * the stream; use readLogs() to retrieve historical output.
    */
-  async *streamLogs(cmdId: string, opts: StreamLogsOpts = {}): AsyncGenerator<SandboxCommandLogBatch> {
+  async *streamLogs(
+    command: SandboxCommandExecution | string,
+    opts: StreamLogsOpts = {},
+  ): AsyncGenerator<SandboxCommandLogBatch> {
     const controller = new AbortController()
     const signal = opts.signal ? AbortSignal.any([opts.signal, controller.signal]) : controller.signal
     let complete = false
@@ -350,7 +354,7 @@ export class Sandbox {
       for await (const response of this.client.rpc.streamCommandLogs(
         {
           sandbox: {selector: {case: 'id', value: this.sandboxId}},
-          cmdId,
+          cmdId: typeof command === 'string' ? command : command.cmdId,
         },
         {signal, timeoutMs: opts.timeoutMs},
       )) {

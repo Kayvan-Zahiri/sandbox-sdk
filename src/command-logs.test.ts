@@ -41,21 +41,29 @@ test('readLogs preserves bytes and independent completion and truncation', async
   assert.equal(result.entries[0]?.lineNumber, 1n)
 })
 
-test('streamLogs yields output and silent completion batches', async () => {
-  const sandbox = await Sandbox.get(
-    client({
-      async *streamCommandLogs() {
-        yield {entries: [entry]}
-        yield {complete: true}
-      },
-    }),
-    'sb',
-  )
-  const batches = await Array.fromAsync(sandbox.streamLogs('cmd'))
-  assert.equal(batches.length, 2)
-  assert.deepEqual(batches[0]?.entries[0]?.data, entry.data)
-  assert.deepEqual(batches[1], {entries: [], complete: true})
-})
+for (const input of ['command', 'cmdId'] as const) {
+  test(`streamLogs accepts ${input} and yields output and silent completion batches`, async () => {
+    const sandbox = await Sandbox.get(
+      client({
+        async *runCommand() {
+          yield {event: {case: 'started', value: {cmdId: 'cmd', startedAt: timestamp}}}
+        },
+        async *streamCommandLogs(request) {
+          assert.equal(request.cmdId, 'cmd')
+          assert.equal(request.sandbox?.selector.value, 'sb')
+          yield {entries: [entry]}
+          yield {complete: true}
+        },
+      }),
+      'sb',
+    )
+    const command = await sandbox.runCommand({cmd: '/bin/sh', detached: true})
+    const batches = await Array.fromAsync(sandbox.streamLogs(input === 'command' ? command : command.cmdId))
+    assert.equal(batches.length, 2)
+    assert.deepEqual(batches[0]?.entries[0]?.data, entry.data)
+    assert.deepEqual(batches[1], {entries: [], complete: true})
+  })
+}
 
 test('streamLogs rejects closure without completion', async () => {
   const sandbox = await Sandbox.get(

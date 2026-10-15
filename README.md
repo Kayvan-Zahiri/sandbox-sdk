@@ -137,10 +137,11 @@ MIT License, see `LICENSE`.
 Use `streamLogs()` to replay records retained by Tail and follow new output. The
 stream reports `complete: true` when the Log Platform observes command EOF,
 including for commands with no output. Breaking iteration cancels the subscription.
+Pass the command returned by `runCommand()` or its `cmdId`.
 
 ```typescript
 const command = await sandbox.runCommand({cmd: 'echo', args: ['hello'], detached: true})
-for await (const batch of sandbox.streamLogs(command.cmdId, {timeoutMs: 30_000})) {
+for await (const batch of sandbox.streamLogs(command, {timeoutMs: 30_000})) {
   for (const entry of batch.entries) {
     console.log(entry.stream, new TextDecoder().decode(entry.data))
   }
