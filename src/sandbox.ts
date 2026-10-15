@@ -292,7 +292,11 @@ export class Sandbox {
   }
 
   /** Read completed command logs, retrying unavailable output within one second. */
-  async readLogs(cmdId: string, opts: ReadLogsOpts = {}): Promise<SandboxCommandLogs> {
+  readLogs(cmdId: string, opts: ReadLogsOpts & {encoding: 'buffer'}): Promise<SandboxCommandLogs<Uint8Array>>
+  readLogs(cmdId: string, opts?: ReadLogsOpts & {encoding?: BufferEncoding}): Promise<SandboxCommandLogs>
+  readLogs(cmdId: string, opts: ReadLogsOpts): Promise<SandboxCommandLogs<string | Uint8Array>>
+  async readLogs(cmdId: string, opts: ReadLogsOpts = {}): Promise<SandboxCommandLogs<string | Uint8Array>> {
+    const encoding = commandLogEncoding(opts.encoding)
     const requestedTimeout = opts.timeoutMs ?? 1000
     if (!Number.isFinite(requestedTimeout) || requestedTimeout <= 0) {
       throw new ConnectError('timeoutMs must be positive and finite', Code.InvalidArgument)
@@ -314,7 +318,7 @@ export class Sandbox {
           {signal: opts.signal, timeoutMs: remaining},
         )
         return {
-          entries: response.entries.map(commandLogEntry),
+          entries: response.entries.map((entry) => commandLogEntry(entry, encoding)),
           complete: response.complete,
           truncated: response.truncated,
         }
@@ -343,10 +347,23 @@ export class Sandbox {
    * Breaking iteration cancels the upstream subscription. Platform resets fail
    * the stream; use readLogs() to retrieve historical output.
    */
+  streamLogs(
+    command: SandboxCommandExecution | string,
+    opts: StreamLogsOpts & {encoding: 'buffer'},
+  ): AsyncGenerator<SandboxCommandLogBatch<Uint8Array>>
+  streamLogs(
+    command: SandboxCommandExecution | string,
+    opts?: StreamLogsOpts & {encoding?: BufferEncoding},
+  ): AsyncGenerator<SandboxCommandLogBatch>
+  streamLogs(
+    command: SandboxCommandExecution | string,
+    opts: StreamLogsOpts,
+  ): AsyncGenerator<SandboxCommandLogBatch<string | Uint8Array>>
   async *streamLogs(
     command: SandboxCommandExecution | string,
     opts: StreamLogsOpts = {},
-  ): AsyncGenerator<SandboxCommandLogBatch> {
+  ): AsyncGenerator<SandboxCommandLogBatch<string | Uint8Array>> {
+    const encoding = commandLogEncoding(opts.encoding)
     const controller = new AbortController()
     const signal = opts.signal ? AbortSignal.any([opts.signal, controller.signal]) : controller.signal
     let complete = false
@@ -359,7 +376,7 @@ export class Sandbox {
         {signal, timeoutMs: opts.timeoutMs},
       )) {
         complete ||= response.complete
-        yield {entries: response.entries.map(commandLogEntry), complete: response.complete}
+        yield {entries: response.entries.map((entry) => commandLogEntry(entry, encoding)), complete: response.complete}
       }
       if (!complete) throw new ConnectError('Log stream closed before command completion', Code.Unavailable)
     } finally {
@@ -777,13 +794,21 @@ function filterToProto(filter: ListFilter): ListSandboxesFilterProto {
   })
 }
 
-function commandLogEntry(entry: LogEntryProto): SandboxCommandLogEntry {
+function commandLogEncoding(encoding: BufferEncoding | 'buffer' = 'utf8') {
+  if (encoding !== 'buffer' && !Buffer.isEncoding(encoding)) throw new TypeError(`Unknown log encoding: ${encoding}`)
+  return encoding
+}
+
+function commandLogEntry(
+  entry: LogEntryProto,
+  encoding: BufferEncoding | 'buffer',
+): SandboxCommandLogEntry<string | Uint8Array> {
   if (entry.stream !== 'stdout' && entry.stream !== 'stderr') {
     throw new ConnectError('Unknown command log channel', Code.DataLoss)
   }
   if (!entry.timestamp) throw new ConnectError('Command log timestamp is missing', Code.DataLoss)
   return {
-    data: entry.data,
+    data: encoding === 'buffer' ? entry.data : Buffer.from(entry.data).toString(encoding),
     stream: entry.stream,
     timestamp: timestampDate(entry.timestamp),
     lineNumber: entry.lineNumber,

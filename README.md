@@ -143,7 +143,7 @@ Pass the command returned by `runCommand()` or its `cmdId`.
 const command = await sandbox.runCommand({cmd: 'echo', args: ['hello'], detached: true})
 for await (const batch of sandbox.streamLogs(command, {timeoutMs: 30_000})) {
   for (const entry of batch.entries) {
-    console.log(entry.stream, new TextDecoder().decode(entry.data))
+    console.log(entry.stream, entry.data)
   }
 }
 
@@ -170,8 +170,19 @@ No automatic reconnect or historical-to-live handoff is performed. Use a direct
 read for completed commands outside Tail retention and streaming for partial or
 long-running output.
 
-Records preserve binary bodies as `Uint8Array`, channel, timestamp, and line
-number. Capture removes line delimiters, so these records differ from the exact
+Records default to UTF-8 strings and preserve channel, timestamp, and line number.
+Both methods accept `encoding` for another Node.js text encoding, such as `'latin1'`.
+Pass `{encoding: 'buffer'}` to receive raw `Uint8Array` data instead:
+
+```typescript
+const snapshot = await sandbox.readLogs(command.cmdId, {encoding: 'buffer'})
+for await (const batch of sandbox.streamLogs(command, {encoding: 'buffer'})) {
+  // Each entry.data is a Uint8Array.
+}
+```
+
+Invalid UTF-8 bytes become replacement characters in text mode; use `'buffer'`
+to preserve every byte. Capture removes line delimiters, so these records differ from the exact
 process bytes available on attached commands. Capture must be enabled for the
 sandbox; commands from older producers may never report log completion.
 Execution-object `logs()`, `output()`, and `wait()` retain their attached-command

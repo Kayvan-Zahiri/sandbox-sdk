@@ -22,6 +22,80 @@ function client(overrides: Partial<ServiceImpl<typeof SandboxService>>): Sandbox
   }
 }
 
+test('readLogs defaults to UTF-8 text', async () => {
+  const text = 'héllo 🌍'
+  const sandbox = await Sandbox.get(
+    client({readCommandLogs: () => ({entries: [{...entry, data: Buffer.from(text)}], complete: true})}),
+    'sb',
+  )
+  const result = await sandbox.readLogs('cmd')
+  const data: string = result.entries[0]!.data
+  assert.equal(data, text)
+})
+
+for (const [encoding, bytes, expected] of [
+  ['utf8', Buffer.from('héllo 🌍'), 'héllo 🌍'],
+  ['latin1', Buffer.from([0x63, 0x61, 0x66, 0xe9]), 'café'],
+  ['utf16le', Buffer.from('hello 🌍', 'utf16le'), 'hello 🌍'],
+  ['utf8', new Uint8Array([255, 0]), '\ufffd\0'],
+  ['buffer', new Uint8Array([255, 0]), new Uint8Array([255, 0])],
+] as const) {
+  test(`both log methods decode ${encoding} records ${JSON.stringify(Array.from(bytes))}`, async () => {
+    const sandbox = await Sandbox.get(
+      client({
+        readCommandLogs: () => ({entries: [{...entry, data: bytes}], complete: true}),
+        async *streamCommandLogs() {
+          yield {entries: [{...entry, data: bytes}], complete: true}
+        },
+      }),
+      'sb',
+    )
+    const options = {encoding}
+    const snapshot = await sandbox.readLogs('cmd', options)
+    assert.deepEqual(snapshot.entries[0]?.data, expected)
+    assert.equal(snapshot.complete, true)
+    const batches = await Array.fromAsync(sandbox.streamLogs('cmd', options))
+    assert.deepEqual(batches[0]?.entries[0]?.data, expected)
+    assert.equal(batches[0]?.complete, true)
+  })
+}
+
+test('streamLogs buffer mode returns typed raw bytes', async () => {
+  const sandbox = await Sandbox.get(
+    client({
+      async *streamCommandLogs() {
+        yield {entries: [entry], complete: true}
+      },
+    }),
+    'sb',
+  )
+  for await (const batch of sandbox.streamLogs('cmd', {encoding: 'buffer'})) {
+    const data: Uint8Array = batch.entries[0]!.data
+    assert.deepEqual(data, entry.data)
+  }
+})
+
+test('both log methods reject unsupported encodings before requesting logs', async () => {
+  let calls = 0
+  const sandbox = await Sandbox.get(
+    client({
+      readCommandLogs: () => {
+        calls++
+        return {complete: true}
+      },
+      async *streamCommandLogs() {
+        calls++
+        yield {complete: true}
+      },
+    }),
+    'sb',
+  )
+  const options = {encoding: 'not-an-encoding' as BufferEncoding}
+  await assert.rejects(sandbox.readLogs('cmd', options), TypeError)
+  await assert.rejects(Array.fromAsync(sandbox.streamLogs('cmd', options)), TypeError)
+  assert.equal(calls, 0)
+})
+
 test('readLogs preserves bytes and independent completion and truncation', async () => {
   const sandbox = await Sandbox.get(
     client({
@@ -34,10 +108,11 @@ test('readLogs preserves bytes and independent completion and truncation', async
     }),
     'sb',
   )
-  const result = await sandbox.readLogs('cmd', {limit: 10})
+  const result = await sandbox.readLogs('cmd', {limit: 10, encoding: 'buffer'})
   assert.equal(result.complete, true)
   assert.equal(result.truncated, true)
-  assert.deepEqual(result.entries[0]?.data, entry.data)
+  const data: Uint8Array | undefined = result.entries[0]?.data
+  assert.deepEqual(data, entry.data)
   assert.equal(result.entries[0]?.lineNumber, 1n)
 })
 
@@ -60,7 +135,8 @@ for (const input of ['command', 'cmdId'] as const) {
     const command = await sandbox.runCommand({cmd: '/bin/sh', detached: true})
     const batches = await Array.fromAsync(sandbox.streamLogs(input === 'command' ? command : command.cmdId))
     assert.equal(batches.length, 2)
-    assert.deepEqual(batches[0]?.entries[0]?.data, entry.data)
+    const data: string | undefined = batches[0]?.entries[0]?.data
+    assert.equal(data, '\ufffd\0')
     assert.deepEqual(batches[1], {entries: [], complete: true})
   })
 }

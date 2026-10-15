@@ -121,28 +121,30 @@ export interface RunCommandOpts {
   detached?: boolean
 }
 
-/** A retained line record. Capture removes line delimiters; data may contain non-UTF-8 bytes. */
-export interface SandboxCommandLogEntry {
-  data: Uint8Array
+/** A retained line record. Capture removes line delimiters. Data defaults to UTF-8 text. */
+export interface SandboxCommandLogEntry<Data extends string | Uint8Array = string> {
+  data: Data
   stream: 'stdout' | 'stderr'
   timestamp: Date
   lineNumber?: bigint
 }
 
 /** Completed retained output. A successful result may still be truncated. */
-export interface SandboxCommandLogs {
-  entries: SandboxCommandLogEntry[]
+export interface SandboxCommandLogs<Data extends string | Uint8Array = string> {
+  entries: SandboxCommandLogEntry<Data>[]
   complete: boolean
   truncated: boolean
 }
 
 /** A batch of retained or newly captured records, including silent completion. */
-export interface SandboxCommandLogBatch {
-  entries: SandboxCommandLogEntry[]
+export interface SandboxCommandLogBatch<Data extends string | Uint8Array = string> {
+  entries: SandboxCommandLogEntry<Data>[]
   complete: boolean
 }
 
 export interface ReadLogsOpts {
+  /** Text encoding, or 'buffer' for raw Uint8Array records. Default: 'utf8'. */
+  encoding?: BufferEncoding | 'buffer'
   /** Maximum records to return. Default: 1000. Maximum: 10000. */
   limit?: number
   signal?: AbortSignal
@@ -151,6 +153,8 @@ export interface ReadLogsOpts {
 }
 
 export interface StreamLogsOpts {
+  /** Text encoding, or 'buffer' for raw Uint8Array records. Default: 'utf8'. */
+  encoding?: BufferEncoding | 'buffer'
   signal?: AbortSignal
   /** Maximum time to follow output. The API also bounds streams to four minutes. */
   timeoutMs?: number
