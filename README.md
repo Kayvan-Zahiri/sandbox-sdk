@@ -220,6 +220,32 @@ The maximum query range is 35 days; oversized queries fail with
 not follow new logs. It defaults to 100 records, accepts 0 through 10,000, and
 searches up to 30 days subject to retention. Its only filter is `source`.
 
+`stream()` follows live arrivals across commands. It yields the same `LogEntry`
+shape as `fetch()` and `tail()`. Replay is explicit:
+
+```ts
+sandbox.logs.stream() // New arrivals only; same as {replay: 'none'}
+sandbox.logs.stream({replay: 'all'}) // Everything still in Tail, then live
+sandbox.logs.stream({replay: new Date(Date.now() - 60_000)}) // From a capture timestamp, then live
+
+const controller = new AbortController()
+for await (const entry of sandbox.logs.stream({replay: 'all', signal: controller.signal})) {
+  console.log(`${entry.source}: ${entry.message}`)
+  // Break the loop or call controller.abort() to stop.
+}
+```
+
+`'all'` covers only Tail's retained replay window, which may be shorter than the
+sandbox's lifetime. A timestamp is inclusive and filters both replay and future
+arrivals by capture time. `'none'` skips records already in Tail when it accepts
+the subscription, without relying on guest clocks. Records follow arrival order;
+timestamps can arrive out of order. `source` filters output, as with `tail()`.
+
+Command completion leaves the sandbox stream open. Calls last at most four
+minutes and then fail with `DEADLINE_EXCEEDED`. A reset or unexpected closure
+returns `UNAVAILABLE`; there is no automatic reconnect or durable catch-up.
+Starting another stream can repeat records when replay is enabled.
+
 Queries include captured command logs while commands are running. Recent
 records can come from Tail storage, while older records become available after
 durable indexing. An empty result does not establish ingestion completion;

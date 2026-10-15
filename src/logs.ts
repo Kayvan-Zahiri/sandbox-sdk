@@ -5,7 +5,7 @@ import type {SandboxLogEntry} from './gen/depot/sandbox/v1/logs_pb.js'
 
 export type LogSource = 'stdout' | 'stderr' | 'system' | 'unknown'
 
-/** A retained record. Capture removes line delimiters; messages are UTF-8 text. */
+/** A captured record. Capture removes line delimiters; messages are UTF-8 text. */
 export interface LogEntry {
   readonly message: string
   readonly source: LogSource
@@ -26,7 +26,14 @@ export interface SandboxLogTailParams {
   source?: LogSource
 }
 
-/** Query retained sandbox logs independently of process output streams. */
+export interface SandboxLogStreamParams {
+  /** Replay retained Tail output, start at a capture timestamp, or follow only new arrivals. Default: 'none'. */
+  replay?: 'all' | Date | 'none'
+  source?: LogSource
+  signal?: AbortSignal
+}
+
+/** Read sandbox logs independently of process output streams. */
 export class SandboxLogs {
   /** @internal */
   constructor(
@@ -56,6 +63,30 @@ export class SandboxLogs {
           searchText: params.searchText,
         },
         {signal: controller.signal},
+      ))
+        yield logEntry(entry)
+    } finally {
+      controller.abort()
+    }
+  }
+
+  /** Follow new arrivals, optionally replaying output still retained in Tail. Does not stop at command completion. */
+  async *stream(params: SandboxLogStreamParams = {}): AsyncIterable<LogEntry> {
+    const replay = params.replay ?? 'none'
+    if (replay instanceof Date ? !Number.isFinite(replay.getTime()) : replay !== 'all' && replay !== 'none') {
+      throw new TypeError('replay must be all, none, or a valid Date')
+    }
+    const controller = new AbortController()
+    const signal = params.signal ? AbortSignal.any([params.signal, controller.signal]) : controller.signal
+    try {
+      for await (const entry of this.client.rpc.streamSandboxLogs(
+        {
+          sandbox: {selector: {case: 'id', value: this.sandboxId}},
+          replay: replay instanceof Date ? 'since' : replay,
+          since: replay instanceof Date ? timestampFromDate(replay) : undefined,
+          source: params.source,
+        },
+        {signal},
       ))
         yield logEntry(entry)
     } finally {

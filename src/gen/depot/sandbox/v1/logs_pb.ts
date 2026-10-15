@@ -16,12 +16,12 @@ import {file_depot_sandbox_v1_refs} from './refs_pb.js'
 export const file_depot_sandbox_v1_logs: GenFile =
   /*@__PURE__*/
   fileDesc(
-    'ChtkZXBvdC9zYW5kYm94L3YxL2xvZ3MucHJvdG8SEGRlcG90LnNhbmRib3gudjEiiQEKD1NhbmRib3hMb2dFbnRyeRIPCgdtZXNzYWdlGAEgASgJEg4KBnNvdXJjZRgCIAEoCRItCgl0aW1lc3RhbXAYAyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhEKCW9iamVjdF9pZBgEIAEoCRITCgtjb250ZXh0X2lkcxgFIAMoCSLDAQoXRmV0Y2hTYW5kYm94TG9nc1JlcXVlc3QSLQoHc2FuZGJveBgBIAEoCzIcLmRlcG90LnNhbmRib3gudjEuU2FuZGJveFJlZhIpCgVzaW5jZRgCIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASKQoFdW50aWwYAyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEg4KBnNvdXJjZRgEIAEoCRITCgtzZWFyY2hfdGV4dBgFIAEoCSJ5ChZUYWlsU2FuZGJveExvZ3NSZXF1ZXN0Ei0KB3NhbmRib3gYASABKAsyHC5kZXBvdC5zYW5kYm94LnYxLlNhbmRib3hSZWYSFAoHZW50cmllcxgCIAEoDUgAiAEBEg4KBnNvdXJjZRgDIAEoCUIKCghfZW50cmllc2IGcHJvdG8z',
+    'ChtkZXBvdC9zYW5kYm94L3YxL2xvZ3MucHJvdG8SEGRlcG90LnNhbmRib3gudjEiiQEKD1NhbmRib3hMb2dFbnRyeRIPCgdtZXNzYWdlGAEgASgJEg4KBnNvdXJjZRgCIAEoCRItCgl0aW1lc3RhbXAYAyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhEKCW9iamVjdF9pZBgEIAEoCRITCgtjb250ZXh0X2lkcxgFIAMoCSLDAQoXRmV0Y2hTYW5kYm94TG9nc1JlcXVlc3QSLQoHc2FuZGJveBgBIAEoCzIcLmRlcG90LnNhbmRib3gudjEuU2FuZGJveFJlZhIpCgVzaW5jZRgCIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASKQoFdW50aWwYAyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEg4KBnNvdXJjZRgEIAEoCRITCgtzZWFyY2hfdGV4dBgFIAEoCSJ5ChZUYWlsU2FuZGJveExvZ3NSZXF1ZXN0Ei0KB3NhbmRib3gYASABKAsyHC5kZXBvdC5zYW5kYm94LnYxLlNhbmRib3hSZWYSFAoHZW50cmllcxgCIAEoDUgAiAEBEg4KBnNvdXJjZRgDIAEoCUIKCghfZW50cmllcyKUAQoYU3RyZWFtU2FuZGJveExvZ3NSZXF1ZXN0Ei0KB3NhbmRib3gYASABKAsyHC5kZXBvdC5zYW5kYm94LnYxLlNhbmRib3hSZWYSDgoGcmVwbGF5GAIgASgJEikKBXNpbmNlGAMgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIOCgZzb3VyY2UYBCABKAliBnByb3RvMw',
     [file_depot_sandbox_v1_refs, file_google_protobuf_timestamp],
   )
 
 /**
- * A retained public log record captured inside a sandbox.
+ * A public log record captured inside a sandbox.
  *
  * @generated from message depot.sandbox.v1.SandboxLogEntry
  */
@@ -151,3 +151,44 @@ export type TailSandboxLogsRequest = Message<'depot.sandbox.v1.TailSandboxLogsRe
 export const TailSandboxLogsRequestSchema: GenMessage<TailSandboxLogsRequest> =
   /*@__PURE__*/
   messageDesc(file_depot_sandbox_v1_logs, 2)
+
+/**
+ * @generated from message depot.sandbox.v1.StreamSandboxLogsRequest
+ */
+export type StreamSandboxLogsRequest = Message<'depot.sandbox.v1.StreamSandboxLogsRequest'> & {
+  /**
+   * Sandbox to follow. Returned by CreateSandbox and GetSandbox.
+   *
+   * @generated from field: depot.sandbox.v1.SandboxRef sandbox = 1;
+   */
+  sandbox?: SandboxRef
+
+  /**
+   * Replay mode. Can be "all", "since", or "none". Default: "none". All replays only records still retained in Tail.
+   *
+   * @generated from field: string replay = 2;
+   */
+  replay: string
+
+  /**
+   * Inclusive capture-time cutoff, in RFC 3339 format. Required with replay="since"; leave empty otherwise.
+   *
+   * @generated from field: google.protobuf.Timestamp since = 3;
+   */
+  since?: Timestamp
+
+  /**
+   * Output source. Can be "stdout", "stderr", "system", or "unknown". Leave empty to include all permitted sources. System records are unavailable.
+   *
+   * @generated from field: string source = 4;
+   */
+  source: string
+}
+
+/**
+ * Describes the message depot.sandbox.v1.StreamSandboxLogsRequest.
+ * Use `create(StreamSandboxLogsRequestSchema)` to create a new message.
+ */
+export const StreamSandboxLogsRequestSchema: GenMessage<StreamSandboxLogsRequest> =
+  /*@__PURE__*/
+  messageDesc(file_depot_sandbox_v1_logs, 3)

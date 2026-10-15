@@ -144,3 +144,88 @@ test('logs preserves and filters unknown customer output', async () => {
   assert.equal(fetched[0]?.source, 'unknown')
   assert.equal(latest[0]?.source, 'unknown')
 })
+
+test('logs.stream defaults to no replay and maps all retained or timestamp replay', async () => {
+  for (const replay of [undefined, 'none', 'all', since] as const) {
+    const sb = await sandbox({
+      async *streamSandboxLogs(request) {
+        assert.equal(request.sandbox?.selector.value, 'sb')
+        assert.equal(request.replay, replay instanceof Date ? 'since' : (replay ?? 'none'))
+        assert.deepEqual(request.since, replay instanceof Date ? timestampFromDate(replay) : undefined)
+        assert.equal(request.source, 'stdout')
+        yield record
+      },
+    })
+    assert.deepEqual(await Array.fromAsync(sb.logs.stream({replay, source: 'stdout'})), [{...record, timestamp: since}])
+  }
+})
+test('logs.stream validates invalid replay dates before opening a request', async () => {
+  const sb = await sandbox({
+    streamSandboxLogs() {
+      throw new Error('must not call')
+    },
+  })
+  await assert.rejects(Array.fromAsync(sb.logs.stream({replay: new Date(NaN)})), TypeError)
+})
+test('logs.stream propagates failures after delivering output', async () => {
+  const sb = await sandbox({
+    async *streamSandboxLogs() {
+      yield record
+      throw new ConnectError('reset', Code.Unavailable)
+    },
+  })
+  const seen: string[] = []
+  await assert.rejects(
+    async () => {
+      for await (const entry of sb.logs.stream()) seen.push(entry.message)
+    },
+    (error: unknown) => error instanceof ConnectError && error.code === Code.Unavailable,
+  )
+  assert.deepEqual(seen, [record.message])
+})
+test('logs.stream supports cancellation while waiting and cancels on break', async () => {
+  let signal: AbortSignal | undefined
+  let closed = false
+  let waiting: (() => void) | undefined
+  const ready = new Promise<void>((resolve) => {
+    waiting = resolve
+  })
+  const client = {
+    endpoint: 'http://test',
+    rpc: {
+      getSandbox: async () => ({sandbox: {sandboxId: 'sb', organizationId: 'org'}}),
+      streamSandboxLogs: (_request: unknown, options: {signal: AbortSignal}) => {
+        signal = options.signal
+        return (async function* () {
+          try {
+            yield record
+            await new Promise<never>((_resolve, reject) => {
+              options.signal.addEventListener('abort', () => reject(new ConnectError('cancelled', Code.Canceled)), {
+                once: true,
+              })
+              waiting?.()
+            })
+          } finally {
+            closed = true
+          }
+        })()
+      },
+    },
+  } as unknown as SandboxClient
+  const sb = await Sandbox.get(client, 'sb')
+  for await (const entry of sb.logs.stream()) {
+    assert.equal(entry.message, record.message)
+    break
+  }
+  assert.equal(signal?.aborted, true)
+  assert.equal(closed, true)
+  closed = false
+  const controller = new AbortController()
+  const iterator = sb.logs.stream({signal: controller.signal})[Symbol.asyncIterator]()
+  await iterator.next()
+  const pending = iterator.next()
+  await ready
+  controller.abort()
+  await assert.rejects(pending, (error: unknown) => error instanceof ConnectError && error.code === Code.Canceled)
+  assert.equal(closed, true)
+})

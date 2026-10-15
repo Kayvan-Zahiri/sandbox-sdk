@@ -5,7 +5,7 @@ package depot.sandbox.v1;
 import "depot/sandbox/v1/refs.proto";
 import "google/protobuf/timestamp.proto";
 
-// A retained public log record captured inside a sandbox.
+// A public log record captured inside a sandbox.
 message SandboxLogEntry {
   // Log message decoded as UTF-8 text. Capture removes line delimiters.
   string message = 1;
@@ -39,4 +39,15 @@ message TailSandboxLogsRequest {
   optional uint32 entries = 2;
   // Output source. Can be "stdout", "stderr", "system", or "unknown". Leave empty to include all permitted sources. System records are unavailable.
   string source = 3;
+}
+
+message StreamSandboxLogsRequest {
+  // Sandbox to follow. Returned by CreateSandbox and GetSandbox.
+  SandboxRef sandbox = 1;
+  // Replay mode. Can be "all", "since", or "none". Default: "none". All replays only records still retained in Tail.
+  string replay = 2;
+  // Inclusive capture-time cutoff, in RFC 3339 format. Required with replay="since"; leave empty otherwise.
+  google.protobuf.Timestamp since = 3;
+  // Output source. Can be "stdout", "stderr", "system", or "unknown". Leave empty to include all permitted sources. System records are unavailable.
+  string source = 4;
 }

@@ -63,5 +63,6 @@ export {
   type LogEntry,
   type LogSource,
   type SandboxLogFetchParams,
+  type SandboxLogStreamParams,
   type SandboxLogTailParams,
 } from './logs.js'

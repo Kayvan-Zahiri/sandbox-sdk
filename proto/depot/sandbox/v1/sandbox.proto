@@ -46,6 +46,8 @@ service SandboxService {
   rpc FetchSandboxLogs(FetchSandboxLogsRequest) returns (stream SandboxLogEntry);
   // Fetch the most recent available records in chronological order, then close.
   rpc TailSandboxLogs(TailSandboxLogsRequest) returns (stream SandboxLogEntry);
+  // Follow sandbox log arrivals, optionally replaying recent retained records.
+  rpc StreamSandboxLogs(StreamSandboxLogsRequest) returns (stream SandboxLogEntry);
   // Read completed command log records. Waits up to 250 ms for completion,
   // then returns UNAVAILABLE if command output is still pending.
   rpc ReadCommandLogs(ReadCommandLogsRequest) returns (ReadCommandLogsResponse);
