@@ -31,7 +31,7 @@ async function sandbox(overrides: Partial<ServiceImpl<typeof SandboxService>>) {
   return Sandbox.get(client, 'sb')
 }
 
-test('logs.fetch forwards Modal filters and yields structured text records', async () => {
+test('logs.fetch forwards query filters and yields structured text records', async () => {
   const sb = await sandbox({
     async *fetchSandboxLogs(request) {
       assert.equal(request.sandbox?.selector.value, 'sb')
