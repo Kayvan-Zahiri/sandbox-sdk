@@ -217,7 +217,7 @@ The maximum query range is 35 days; oversized queries fail with
 `RESOURCE_EXHAUSTED` rather than silently omit records.
 
 `tail()` returns the latest records in chronological order and finishes; it does
-not follow new logs. It defaults to 100 records, accepts 0 through 20,000, and
+not follow new logs. It defaults to 100 records, accepts 0 through 10,000, and
 searches up to 30 days subject to retention. Its only filter is `source`.
 
 Queries include captured command logs while commands are running. Recent

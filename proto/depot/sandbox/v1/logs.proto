@@ -35,7 +35,7 @@ message FetchSandboxLogsRequest {
 message TailSandboxLogsRequest {
   // Sandbox to query. Returned by CreateSandbox and GetSandbox.
   SandboxRef sandbox = 1;
-  // Number of recent records to return. Maximum: 20000. Default: 100.
+  // Number of recent records to return. Maximum: 10000. Default: 100.
   optional uint32 entries = 2;
   // Output source. Can be "stdout", "stderr", "system", or "unknown". Leave empty to include all permitted sources. System records are unavailable.
   string source = 3;

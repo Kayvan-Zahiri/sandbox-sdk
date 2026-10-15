@@ -21,7 +21,7 @@ export interface SandboxLogFetchParams {
   searchText?: string
 }
 export interface SandboxLogTailParams {
-  /** Number of latest records. Default: 100. Maximum: 20000. */
+  /** Number of latest records. Default: 100. Maximum: 10000. */
   entries?: number
   source?: LogSource
 }

@@ -130,7 +130,7 @@ export type TailSandboxLogsRequest = Message<'depot.sandbox.v1.TailSandboxLogsRe
   sandbox?: SandboxRef
 
   /**
-   * Number of recent records to return. Maximum: 20000. Default: 100.
+   * Number of recent records to return. Maximum: 10000. Default: 100.
    *
    * @generated from field: optional uint32 entries = 2;
    */
