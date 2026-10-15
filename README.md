@@ -187,3 +187,39 @@ process bytes available on attached commands. Capture must be enabled for the
 sandbox; commands from older producers may never report log completion.
 Execution-object `logs()`, `output()`, and `wait()` retain their attached-command
 semantics and remain unavailable for detached commands.
+
+### Query retained sandbox logs
+
+Use `sandbox.logs` to query captured records separately from command output
+streams. Both methods yield decoded UTF-8 messages with `source`, `timestamp`,
+`objectId` (the sandbox ID), and `contextIds` (the command ID when present).
+
+```ts
+for await (const entry of sandbox.logs.fetch({
+  since: new Date(Date.now() - 60_000),
+  source: 'stderr',
+  searchText: 'error',
+})) {
+  console.log(entry.message)
+}
+
+for await (const entry of sandbox.logs.tail({entries: 20})) {
+  console.log(`${entry.source}: ${entry.message}`)
+}
+```
+
+`fetch()` queries `[since, until)` in chronological order. `until` defaults to
+the current time. Source can be `stdout`, `stderr`, or `system`; omitted source
+includes all public channels. `searchText` is a case-sensitive substring.
+The maximum query range is 35 days; oversized queries fail with
+`RESOURCE_EXHAUSTED` rather than silently omit records.
+
+`tail()` returns the latest records in chronological order and finishes; it does
+not follow new logs. It defaults to 100 records, accepts 0 through 20,000, and
+searches up to 30 days subject to retention. Its only filter is `source`.
+
+Queries include captured command logs while commands are running. Recent
+records can come from Tail storage, while older records become available after
+durable indexing. An empty result does not establish ingestion completion;
+there can be a gap between recent retention and durable availability. Capture
+removes line delimiters, so retained records differ from exact process output.

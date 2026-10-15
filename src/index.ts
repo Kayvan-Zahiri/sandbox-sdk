@@ -57,3 +57,11 @@ export type {
   SandboxStatus,
   StreamLogsOpts,
 } from './types.js'
+
+export {
+  SandboxLogs,
+  type LogEntry,
+  type LogSource,
+  type SandboxLogFetchParams,
+  type SandboxLogTailParams,
+} from './logs.js'

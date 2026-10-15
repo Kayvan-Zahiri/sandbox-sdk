@@ -5,6 +5,7 @@ package depot.sandbox.v1;
 import "depot/sandbox/v1/command.proto";
 import "depot/sandbox/v1/filesystem.proto";
 import "depot/sandbox/v1/refs.proto";
+import "depot/sandbox/v1/logs.proto";
 import "google/protobuf/timestamp.proto";
 
 // The next-generation sandbox API. It will eventually replace
@@ -41,6 +42,10 @@ service SandboxService {
   // through ReadCommandLogs and StreamCommandLogs.
   rpc RunCommand(RunCommandRequest) returns (stream SandboxCommandExecutionEvent);
 
+  // Fetch available retained records in a fixed time range, then close.
+  rpc FetchSandboxLogs(FetchSandboxLogsRequest) returns (stream SandboxLogEntry);
+  // Fetch the most recent available records in chronological order, then close.
+  rpc TailSandboxLogs(TailSandboxLogsRequest) returns (stream SandboxLogEntry);
   // Read completed command log records. Waits up to 250 ms for completion,
   // then returns UNAVAILABLE if command output is still pending.
   rpc ReadCommandLogs(ReadCommandLogsRequest) returns (ReadCommandLogsResponse);

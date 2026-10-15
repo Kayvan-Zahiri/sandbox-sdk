@@ -21,6 +21,7 @@ import {
   type SandboxConfiguration as SandboxConfigurationProto,
   type Sandbox as SandboxProto,
 } from './gen/depot/sandbox/v1/sandbox_pb.js'
+import {SandboxLogs} from './logs.js'
 import {SandboxTailnet} from './tailnet.js'
 import type {
   Architecture,
@@ -47,6 +48,7 @@ import type {
  * {@link Sandbox.get}, {@link Sandbox.list}, or {@link Sandbox.listAll}.
  */
 export class Sandbox {
+  readonly logs: SandboxLogs
   readonly sandboxId: string
   readonly organizationId: string
   protected readonly client: SandboxClient
@@ -70,6 +72,7 @@ export class Sandbox {
   protected _env: Record<string, string> = {}
 
   protected constructor(opts: {client: SandboxClient; sandboxId: string; organizationId: string}) {
+    this.logs = new SandboxLogs(opts.client, opts.sandboxId)
     this.client = opts.client
     this.sandboxId = opts.sandboxId
     this.organizationId = opts.organizationId
