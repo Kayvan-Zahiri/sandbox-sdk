@@ -460,10 +460,9 @@ export type RunCommandRequest = Message<'depot.sandbox.v1.RunCommandRequest'> & 
 
   /**
    * Run the command detached (beta). The server returns once the command has
-   * started and the command keeps running in the sandbox, but its output is not
-   * retained and can't be retrieved yet, so the response stream ends right after
-   * the Started event. Reattaching to a detached command's output is a future
-   * API (DEP-4520). Default: false.
+   * started and the command keeps running in the sandbox. The response stream
+   * ends after the Started event. Retrieve retained output with
+   * `ReadCommandLogs` or `StreamCommandLogs`. Default: false.
    *
    * @generated from field: optional bool detached = 7;
    */
