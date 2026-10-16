@@ -44,9 +44,8 @@ message SandboxCommandExecution {
   map<string, string> env = 6;
   // Whether the command was run through `sudo -E`.
   bool sudo = 7;
-  // Whether the command was run detached. Detached mode is in beta: the command
-  // runs fire-and-forget and its output is not retained, so it can't be
-  // retrieved through this API yet.
+  // Whether the command was run detached. Retained output is available through
+  // ReadCommandLogs and StreamCommandLogs.
   bool detached = 8;
   // Current state of the command. This is independent of the exit code: a
   // command that exits with a nonzero code still reports a finished status,
@@ -158,9 +157,54 @@ message RunCommandRequest {
   // Default: false.
   optional bool sudo = 6;
   // Run the command detached (beta). The server returns once the command has
-  // started and the command keeps running in the sandbox, but its output is not
-  // retained and can't be retrieved yet, so the response stream ends right after
-  // the Started event. Reattaching to a detached command's output is a future
-  // API (DEP-4520). Default: false.
+  // started and the command keeps running in the sandbox. The response stream
+  // ends after the Started event. Retrieve retained output with
+  // `ReadCommandLogs` or `StreamCommandLogs`. Default: false.
   optional bool detached = 7;
+}
+
+// A retained log record. Line delimiters are removed during capture; these
+// records are not a byte-for-byte replay of the process output stream.
+message SandboxCommandLogEntry {
+  // Raw log bytes. The contents are not guaranteed to be valid UTF-8.
+  bytes data = 1;
+  // Output channel. Can be "stdout" or "stderr".
+  string stream = 2;
+  // Time the record was captured, in RFC 3339 format.
+  google.protobuf.Timestamp timestamp = 3;
+  // Producer line number within the channel.
+  optional uint64 line_number = 4;
+}
+
+message ReadCommandLogsRequest {
+  // Sandbox that ran the command. Returned by CreateSandbox and GetSandbox.
+  SandboxRef sandbox = 1;
+  // Unique identifier for the command. Returned by RunCommand.
+  string cmd_id = 2;
+  // Maximum number of records to return. Maximum: 10000. Default: 1000.
+  optional uint32 limit = 3;
+}
+
+message ReadCommandLogsResponse {
+  // Retained records in timestamp order.
+  repeated SandboxCommandLogEntry entries = 1;
+  // True when the Log Platform has observed command output completion.
+  // Successful reads are complete; a truncated response can still omit earlier output when this is true.
+  bool complete = 2;
+  // Whether additional records were omitted from this response.
+  bool truncated = 3;
+}
+
+message StreamCommandLogsRequest {
+  // Sandbox that ran the command. Returned by CreateSandbox and GetSandbox.
+  SandboxRef sandbox = 1;
+  // Unique identifier for the command. Returned by RunCommand.
+  string cmd_id = 2;
+}
+
+message StreamCommandLogsResponse {
+  // Retained or newly captured records. Empty for a silent command's completion.
+  repeated SandboxCommandLogEntry entries = 1;
+  // Whether the Log Platform has observed command output completion.
+  bool complete = 2;
 }

@@ -5,6 +5,7 @@ package depot.sandbox.v1;
 import "depot/sandbox/v1/command.proto";
 import "depot/sandbox/v1/filesystem.proto";
 import "depot/sandbox/v1/refs.proto";
+import "depot/sandbox/v1/logs.proto";
 import "google/protobuf/timestamp.proto";
 
 // The next-generation sandbox API. It will eventually replace
@@ -37,9 +38,21 @@ service SandboxService {
   // Started event and ends with Finished (or terminates with a Connect error).
   // Stdout/stderr arrive as raw bytes alongside the legacy string oneof.
   // Detached mode (`detached=true`) is in beta: the server ends the stream right
-  // after Started and the command keeps running in the sandbox, but its output
-  // is not retained and can't be retrieved yet.
+  // after Started and the command keeps running in the sandbox, and its retained output is available
+  // through ReadCommandLogs and StreamCommandLogs.
   rpc RunCommand(RunCommandRequest) returns (stream SandboxCommandExecutionEvent);
+
+  // Fetch available retained records in a fixed time range, then close.
+  rpc FetchSandboxLogs(FetchSandboxLogsRequest) returns (stream SandboxLogEntry);
+  // Fetch the most recent available records in chronological order, then close.
+  rpc TailSandboxLogs(TailSandboxLogsRequest) returns (stream SandboxLogEntry);
+  // Follow sandbox log arrivals, optionally replaying recent retained records.
+  rpc StreamSandboxLogs(StreamSandboxLogsRequest) returns (stream SandboxLogEntry);
+  // Read completed command log records. Waits up to 250 ms for completion,
+  // then returns UNAVAILABLE if command output is still pending.
+  rpc ReadCommandLogs(ReadCommandLogsRequest) returns (ReadCommandLogsResponse);
+  // Replay retained command logs and follow new records until command output completes.
+  rpc StreamCommandLogs(StreamCommandLogsRequest) returns (stream StreamCommandLogsResponse);
 
   // File system access. These methods give a caller a node:fs/promises-shaped
   // view of the sandbox's file system. Their messages and enums are defined in

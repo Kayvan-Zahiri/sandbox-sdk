@@ -131,3 +131,127 @@ If a published version has incorrect release metadata or npm dist-tags, prefer f
 ## License
 
 MIT License, see `LICENSE`.
+
+## Detached command logs
+
+Use `streamLogs()` to replay records retained by Tail and follow new output. The
+stream reports `complete: true` when the Log Platform observes command EOF,
+including for commands with no output. Breaking iteration cancels the subscription.
+Pass the command returned by `runCommand()` or its `cmdId`.
+
+```typescript
+const command = await sandbox.runCommand({cmd: 'echo', args: ['hello'], detached: true})
+for await (const batch of sandbox.streamLogs(command, {timeoutMs: 30_000})) {
+  for (const entry of batch.entries) {
+    console.log(entry.stream, entry.data)
+  }
+}
+
+const snapshot = await sandbox.readLogs(command.cmdId, {limit: 1000})
+console.log(snapshot.complete, snapshot.truncated)
+```
+
+`readLogs()` returns completed retained records, including historical output after
+Tail retention. Each server attempt waits up to 250 ms for command EOF, returning
+`UNAVAILABLE` if output is still pending. The SDK retries that code after linear
+delays of 50 ms, 100 ms, 150 ms, and so on, without jitter. All requests and delays
+share a one-second budget; `timeoutMs` can shorten it. Each attempt receives the
+remaining deadline. Cancellation stops requests and backoff. If no retry fits the
+remaining budget, the last `UNAVAILABLE` is thrown. Other errors are not retried.
+
+A successful silent command has empty entries and `complete: true`. Completed
+output can still be truncated. Each retry replaces the previous snapshot; records
+are not appended or duplicated. There is no historical page token.
+
+A new `streamLogs()` call replays records still held by Tail and can repeat output
+from a previous call. Platform resets, expired grants, and closure without
+completion throw instead of reporting success. Streams last at most four minutes.
+No automatic reconnect or historical-to-live handoff is performed. Use a direct
+read for completed commands outside Tail retention and streaming for partial or
+long-running output.
+
+Records default to UTF-8 strings and preserve channel, timestamp, and line number.
+Both methods accept `encoding` for another Node.js text encoding, such as `'latin1'`.
+Pass `{encoding: 'buffer'}` to receive raw `Uint8Array` data instead:
+
+```typescript
+const snapshot = await sandbox.readLogs(command.cmdId, {encoding: 'buffer'})
+for await (const batch of sandbox.streamLogs(command, {encoding: 'buffer'})) {
+  // Each entry.data is a Uint8Array.
+}
+```
+
+Invalid UTF-8 bytes become replacement characters in text mode; use `'buffer'`
+to preserve every byte. Capture removes line delimiters, so these records differ from the exact
+process bytes available on attached commands. Capture must be enabled for the
+sandbox; commands from older producers may never report log completion.
+Execution-object `logs()`, `output()`, and `wait()` retain their attached-command
+semantics and remain unavailable for detached commands.
+
+### Query retained sandbox logs
+
+Use `sandbox.logs` to query captured records separately from command output
+streams. Both methods yield decoded UTF-8 messages with `source`, `timestamp`,
+`objectId` (the sandbox ID), and `contextIds` (the command ID when present).
+
+```ts
+for await (const entry of sandbox.logs.fetch({
+  since: new Date(Date.now() - 60_000),
+  source: 'stderr',
+  searchText: 'error',
+})) {
+  console.log(entry.message)
+}
+
+for await (const entry of sandbox.logs.tail({entries: 20})) {
+  console.log(`${entry.source}: ${entry.message}`)
+}
+```
+
+`fetch()` queries `[since, until)` in chronological order. `until` defaults to
+the current time. Source can be `stdout`, `stderr`, `unknown`, or `system`; omitted source
+includes all permitted sources. `unknown` represents unspecified customer output.
+System records are staff-only and are never returned by these customer methods,
+even when `system` is requested as a filter. `searchText` is a case-sensitive substring.
+The maximum query range is 35 days; oversized queries fail with
+`RESOURCE_EXHAUSTED` rather than silently omit records.
+
+`tail()` returns the latest records in chronological order and finishes; it does
+not follow new logs. It defaults to 100 records, accepts 0 through 10,000, and
+searches up to 30 days subject to retention. Its only filter is `source`.
+
+`stream()` follows live arrivals across commands. It yields the same `LogEntry`
+shape as `fetch()` and `tail()`. Replay is explicit:
+
+```ts
+sandbox.logs.stream() // New arrivals only; same as {replay: 'none'}
+sandbox.logs.stream({replay: 'all'}) // Everything still in Tail, then live
+sandbox.logs.stream({replay: new Date(Date.now() - 60_000)}) // From a capture timestamp, then live
+
+const controller = new AbortController()
+for await (const entry of sandbox.logs.stream({replay: 'all', signal: controller.signal})) {
+  console.log(`${entry.source}: ${entry.message}`)
+  // Break the loop or call controller.abort() to stop.
+}
+```
+
+`'all'` covers only Tail's retained replay window, which may be shorter than the
+sandbox's lifetime. A timestamp is inclusive and filters both replay and future
+arrivals by capture time. `'none'` skips records already in Tail when it accepts
+the subscription, without relying on guest clocks. Records follow arrival order;
+timestamps can arrive out of order. `source` filters output, as with `tail()`.
+
+Command completion leaves the sandbox stream open. Calls last at most four
+minutes and then fail with `DEADLINE_EXCEEDED`. A reset or unexpected closure
+returns `UNAVAILABLE`; there is no automatic reconnect or durable catch-up.
+Starting another stream can repeat records when replay is enabled.
+
+Log timestamps have millisecond precision and round down. Reusing a returned
+entry's timestamp as an inclusive replay cutoff includes that boundary record;
+it may also repeat other records captured within the same millisecond.
+
+Queries include captured command logs while commands are running. Recent
+records can come from Tail storage, while older records become available after
+durable indexing. An empty result does not establish ingestion completion;
+there can be a gap between recent retention and durable availability. Capture
+removes line delimiters, so retained records differ from exact process output.

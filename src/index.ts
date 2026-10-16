@@ -45,10 +45,24 @@ export type {
   ListFilter,
   Pagination,
   PaginationResult,
+  ReadLogsOpts,
   Resources,
   RunCommandOpts,
   Runtime,
   SandboxCommandExecutionStatus,
+  SandboxCommandLogBatch,
+  SandboxCommandLogEntry,
+  SandboxCommandLogs,
   SandboxConfiguration,
   SandboxStatus,
+  StreamLogsOpts,
 } from './types.js'
+
+export {
+  SandboxLogs,
+  type LogEntry,
+  type LogSource,
+  type SandboxLogFetchParams,
+  type SandboxLogStreamParams,
+  type SandboxLogTailParams,
+} from './logs.js'

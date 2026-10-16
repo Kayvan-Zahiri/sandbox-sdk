@@ -108,13 +108,9 @@ export type SandboxCommandExecutionStatus = 'pending' | 'running' | 'finished' |
 /**
  * Options bag for {@link Sandbox.runCommand}.
  *
- * `detached` runs the command fire-and-forget (beta). With it set,
- * {@link Sandbox.runCommand} returns as soon as the command starts, and the
- * command keeps running in the sandbox afterward — but its output is not
- * retained and can't be retrieved yet, so `logs()`, `output()`, and `wait()`
- * on the returned execution throw, and the SDK logs a warning. Reattaching to a
- * detached command's output is a future API. Leave `detached` unset
- * for the normal blocking shape, where you stream output and await the result.
+ * `detached` returns after launch. Use sandbox.readLogs() or sandbox.streamLogs()
+ * to retrieve retained output. The execution object's logs(), output(), and wait()
+ * remain unavailable for detached commands.
  */
 export interface RunCommandOpts {
   cmd: string
@@ -123,4 +119,43 @@ export interface RunCommandOpts {
   env?: Record<string, string>
   sudo?: boolean
   detached?: boolean
+}
+
+/** A retained line record. Capture removes line delimiters. Data defaults to UTF-8 text. */
+export interface SandboxCommandLogEntry<Data extends string | Uint8Array = string> {
+  data: Data
+  stream: 'stdout' | 'stderr'
+  timestamp: Date
+  lineNumber?: bigint
+}
+
+/** Completed retained output. A successful result may still be truncated. */
+export interface SandboxCommandLogs<Data extends string | Uint8Array = string> {
+  entries: SandboxCommandLogEntry<Data>[]
+  complete: boolean
+  truncated: boolean
+}
+
+/** A batch of retained or newly captured records, including silent completion. */
+export interface SandboxCommandLogBatch<Data extends string | Uint8Array = string> {
+  entries: SandboxCommandLogEntry<Data>[]
+  complete: boolean
+}
+
+export interface ReadLogsOpts {
+  /** Text encoding, or 'buffer' for raw Uint8Array records. Default: 'utf8'. */
+  encoding?: BufferEncoding | 'buffer'
+  /** Maximum records to return. Default: 1000. Maximum: 10000. */
+  limit?: number
+  signal?: AbortSignal
+  /** Total budget for requests and linear retry delays. Default and maximum: 1000 ms. */
+  timeoutMs?: number
+}
+
+export interface StreamLogsOpts {
+  /** Text encoding, or 'buffer' for raw Uint8Array records. Default: 'utf8'. */
+  encoding?: BufferEncoding | 'buffer'
+  signal?: AbortSignal
+  /** Maximum time to follow output. The API also bounds streams to four minutes. */
+  timeoutMs?: number
 }

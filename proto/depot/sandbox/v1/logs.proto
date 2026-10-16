@@ -1,0 +1,53 @@
+syntax = "proto3";
+
+package depot.sandbox.v1;
+
+import "depot/sandbox/v1/refs.proto";
+import "google/protobuf/timestamp.proto";
+
+// A public log record captured inside a sandbox.
+message SandboxLogEntry {
+  // Log message decoded as UTF-8 text. Capture removes line delimiters.
+  string message = 1;
+  // Output source. Can be "stdout", "stderr", or "unknown".
+  string source = 2;
+  // Time the record was captured, in RFC 3339 format.
+  google.protobuf.Timestamp timestamp = 3;
+  // Unique identifier for the sandbox that emitted this record.
+  string object_id = 4;
+  // An array of command identifiers associated with this record.
+  repeated string context_ids = 5;
+}
+
+message FetchSandboxLogsRequest {
+  // Sandbox to query. Returned by CreateSandbox and GetSandbox.
+  SandboxRef sandbox = 1;
+  // Start of the requested time range, inclusive, in RFC 3339 format.
+  google.protobuf.Timestamp since = 2;
+  // End of the requested time range, exclusive, in RFC 3339 format. Default: current time.
+  google.protobuf.Timestamp until = 3;
+  // Output source. Can be "stdout", "stderr", "system", or "unknown". Leave empty to include all permitted sources. System records are unavailable.
+  string source = 4;
+  // Case-sensitive text contained in the message. Leave empty to include all messages.
+  string search_text = 5;
+}
+
+message TailSandboxLogsRequest {
+  // Sandbox to query. Returned by CreateSandbox and GetSandbox.
+  SandboxRef sandbox = 1;
+  // Number of recent records to return. Maximum: 10000. Default: 100.
+  optional uint32 entries = 2;
+  // Output source. Can be "stdout", "stderr", "system", or "unknown". Leave empty to include all permitted sources. System records are unavailable.
+  string source = 3;
+}
+
+message StreamSandboxLogsRequest {
+  // Sandbox to follow. Returned by CreateSandbox and GetSandbox.
+  SandboxRef sandbox = 1;
+  // Replay mode. Can be "all", "since", or "none". Default: "none". All replays only records still retained in Tail.
+  string replay = 2;
+  // Inclusive capture-time cutoff, in RFC 3339 format. Required with replay="since"; leave empty otherwise.
+  google.protobuf.Timestamp since = 3;
+  // Output source. Can be "stdout", "stderr", "system", or "unknown". Leave empty to include all permitted sources. System records are unavailable.
+  string source = 4;
+}
