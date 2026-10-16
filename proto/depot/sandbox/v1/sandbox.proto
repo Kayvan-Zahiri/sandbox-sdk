@@ -80,8 +80,7 @@ service SandboxService {
   // the file, followed by the bytes to write.
   rpc WriteFile(stream WriteFileRequest) returns (WriteFileResponse);
 
-  // SnapshotSandbox captures a running sandbox's files into a Snapshot. Pass
-  // the snapshot to CreateSandbox to boot a new sandbox with them restored.
+  // SnapshotSandbox captures a running sandbox's files into a Snapshot.
   rpc SnapshotSandbox(SnapshotSandboxRequest) returns (SnapshotSandboxResponse);
 }
 
@@ -308,10 +307,7 @@ message CreateSandboxRequest {
   optional Architecture architecture = 10;
   // Skip the Depot Cache environment every command otherwise gets. Default: false.
   optional bool disable_depot_cache = 11;
-  // Boot from a snapshot taken with SnapshotSandbox. Its files are restored
-  // before the sandbox reports RUNNING, and `runtime` and `architecture`
-  // default to the snapshot's. An `architecture` that conflicts with the
-  // snapshot's fails with InvalidArgument.
+  // Boot with this snapshot's files restored; runtime and architecture default to its.
   optional SnapshotRef snapshot = 12;
 }
 
@@ -410,11 +406,9 @@ message SetSandboxTimeoutResponse {
   Sandbox sandbox = 1;
 }
 
-// A point-in-time copy of a sandbox's files. Pass its id as
-// `CreateSandboxRequest.snapshot` to boot a new sandbox with those files
-// restored.
+// A point-in-time copy of a sandbox's files.
 message Snapshot {
-  // Server-assigned identifier for the snapshot.
+  // Server-assigned snapshot identifier.
   string snapshot_id = 1;
   // The sandbox the snapshot was taken from.
   string source_sandbox_id = 2;
@@ -424,19 +418,19 @@ message Snapshot {
   int64 size_bytes = 4;
   // Number of files captured.
   int64 file_count = 5;
-  // Runtime of the source sandbox. A sandbox created from this snapshot uses
-  // it unless the create request sets its own.
+  // Runtime of the source sandbox.
   Runtime runtime = 6;
-  // Architecture of the source sandbox. A sandbox created from this snapshot
-  // runs on it.
+  // Architecture of the source sandbox.
   Architecture architecture = 7;
 }
 
+// Request for SnapshotSandbox.
 message SnapshotSandboxRequest {
   // The sandbox to snapshot.
   SandboxRef sandbox = 1;
 }
 
+// Response from SnapshotSandbox.
 message SnapshotSandboxResponse {
   // The snapshot that was taken.
   Snapshot snapshot = 1;

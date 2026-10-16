@@ -506,10 +506,7 @@ export type CreateSandboxRequest = Message<'depot.sandbox.v1.CreateSandboxReques
   disableDepotCache?: boolean
 
   /**
-   * Boot from a snapshot taken with SnapshotSandbox. Its files are restored
-   * before the sandbox reports RUNNING, and `runtime` and `architecture`
-   * default to the snapshot's. An `architecture` that conflicts with the
-   * snapshot's fails with InvalidArgument.
+   * Boot with this snapshot's files restored; runtime and architecture default to its.
    *
    * @generated from field: optional depot.sandbox.v1.SnapshotRef snapshot = 12;
    */
@@ -830,15 +827,13 @@ export const SetSandboxTimeoutResponseSchema: GenMessage<SetSandboxTimeoutRespon
   messageDesc(file_depot_sandbox_v1_sandbox, 16)
 
 /**
- * A point-in-time copy of a sandbox's files. Pass its id as
- * `CreateSandboxRequest.snapshot` to boot a new sandbox with those files
- * restored.
+ * A point-in-time copy of a sandbox's files.
  *
  * @generated from message depot.sandbox.v1.Snapshot
  */
 export type Snapshot = Message<'depot.sandbox.v1.Snapshot'> & {
   /**
-   * Server-assigned identifier for the snapshot.
+   * Server-assigned snapshot identifier.
    *
    * @generated from field: string snapshot_id = 1;
    */
@@ -873,16 +868,14 @@ export type Snapshot = Message<'depot.sandbox.v1.Snapshot'> & {
   fileCount: bigint
 
   /**
-   * Runtime of the source sandbox. A sandbox created from this snapshot uses
-   * it unless the create request sets its own.
+   * Runtime of the source sandbox.
    *
    * @generated from field: depot.sandbox.v1.Runtime runtime = 6;
    */
   runtime?: Runtime
 
   /**
-   * Architecture of the source sandbox. A sandbox created from this snapshot
-   * runs on it.
+   * Architecture of the source sandbox.
    *
    * @generated from field: depot.sandbox.v1.Architecture architecture = 7;
    */
@@ -896,6 +889,8 @@ export type Snapshot = Message<'depot.sandbox.v1.Snapshot'> & {
 export const SnapshotSchema: GenMessage<Snapshot> = /*@__PURE__*/ messageDesc(file_depot_sandbox_v1_sandbox, 17)
 
 /**
+ * Request for SnapshotSandbox.
+ *
  * @generated from message depot.sandbox.v1.SnapshotSandboxRequest
  */
 export type SnapshotSandboxRequest = Message<'depot.sandbox.v1.SnapshotSandboxRequest'> & {
@@ -916,6 +911,8 @@ export const SnapshotSandboxRequestSchema: GenMessage<SnapshotSandboxRequest> =
   messageDesc(file_depot_sandbox_v1_sandbox, 18)
 
 /**
+ * Response from SnapshotSandbox.
+ *
  * @generated from message depot.sandbox.v1.SnapshotSandboxResponse
  */
 export type SnapshotSandboxResponse = Message<'depot.sandbox.v1.SnapshotSandboxResponse'> & {
@@ -1297,8 +1294,7 @@ export const SandboxService: GenService<{
     output: typeof WriteFileResponseSchema
   }
   /**
-   * SnapshotSandbox captures a running sandbox's files into a Snapshot. Pass
-   * the snapshot to CreateSandbox to boot a new sandbox with them restored.
+   * SnapshotSandbox captures a running sandbox's files into a Snapshot.
    *
    * @generated from rpc depot.sandbox.v1.SandboxService.SnapshotSandbox
    */
