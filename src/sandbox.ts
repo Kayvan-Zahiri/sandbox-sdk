@@ -1,14 +1,10 @@
 import {create} from '@bufbuild/protobuf'
 import {timestampDate, timestampFromDate, type Timestamp} from '@bufbuild/protobuf/wkt'
 import {Code, ConnectError} from '@connectrpc/connect'
-import {setTimeout as delay} from 'node:timers/promises'
 import type {SandboxClient} from './client.js'
 import {_commandInternals, type SandboxCommandExecution} from './command.js'
 import {FileSystem} from './filesystem.js'
-import type {
-  SandboxCommandLogEntry as LogEntryProto,
-  SandboxCommandExecutionEvent,
-} from './gen/depot/sandbox/v1/command_pb.js'
+import type {SandboxCommandExecutionEvent} from './gen/depot/sandbox/v1/command_pb.js'
 import {
   Architecture as ArchitectureProto,
   ListSandboxesRequest_FilterSchema,
@@ -21,7 +17,6 @@ import {
   type SandboxConfiguration as SandboxConfigurationProto,
   type Sandbox as SandboxProto,
 } from './gen/depot/sandbox/v1/sandbox_pb.js'
-import {logTimestamp} from './log-timestamp.js'
 import {SandboxLogs} from './logs.js'
 import {SandboxTailnet} from './tailnet.js'
 import type {
@@ -30,16 +25,11 @@ import type {
   NetworkUsage,
   Pagination,
   PaginationResult,
-  ReadLogsOpts,
   Resources,
   RunCommandOpts,
   Runtime,
-  SandboxCommandLogBatch,
-  SandboxCommandLogEntry,
-  SandboxCommandLogs,
   SandboxConfiguration,
   SandboxStatus,
-  StreamLogsOpts,
 } from './types.js'
 
 /**
@@ -295,99 +285,6 @@ export class Sandbox {
     if (response.sandbox) this.applyProto(response.sandbox)
   }
 
-  /** Read completed command logs, retrying unavailable output within one second. */
-  readLogs(cmdId: string, opts: ReadLogsOpts & {encoding: 'buffer'}): Promise<SandboxCommandLogs<Uint8Array>>
-  readLogs(cmdId: string, opts?: ReadLogsOpts & {encoding?: BufferEncoding}): Promise<SandboxCommandLogs>
-  readLogs(cmdId: string, opts: ReadLogsOpts): Promise<SandboxCommandLogs<string | Uint8Array>>
-  async readLogs(cmdId: string, opts: ReadLogsOpts = {}): Promise<SandboxCommandLogs<string | Uint8Array>> {
-    const encoding = commandLogEncoding(opts.encoding)
-    const requestedTimeout = opts.timeoutMs ?? 1000
-    if (!Number.isFinite(requestedTimeout) || requestedTimeout <= 0) {
-      throw new ConnectError('timeoutMs must be positive and finite', Code.InvalidArgument)
-    }
-    const deadline = performance.now() + Math.min(requestedTimeout, 1000)
-    let retryDelay = 50
-    let unavailable: ConnectError | undefined
-    while (true) {
-      if (opts.signal?.aborted) throw ConnectError.from(opts.signal.reason, Code.Canceled)
-      const remaining = Math.ceil(deadline - performance.now())
-      if (remaining <= 0) throw unavailable ?? new ConnectError('Log read deadline exceeded', Code.DeadlineExceeded)
-      try {
-        const response = await this.client.rpc.readCommandLogs(
-          {
-            sandbox: {selector: {case: 'id', value: this.sandboxId}},
-            cmdId,
-            limit: opts.limit,
-          },
-          {signal: opts.signal, timeoutMs: remaining},
-        )
-        return {
-          entries: response.entries.map((entry) => commandLogEntry(entry, encoding)),
-          complete: response.complete,
-          truncated: response.truncated,
-        }
-      } catch (error) {
-        if (opts.signal?.aborted) throw ConnectError.from(opts.signal.reason, Code.Canceled)
-        const failure = ConnectError.from(error)
-        if (failure.code !== Code.Unavailable) {
-          if (failure.code === Code.DeadlineExceeded && unavailable && performance.now() >= deadline - 1)
-            throw unavailable
-          throw failure
-        }
-        unavailable = failure
-      }
-      if (retryDelay >= deadline - performance.now()) throw unavailable
-      try {
-        await delay(retryDelay, undefined, {signal: opts.signal})
-      } catch (error) {
-        throw ConnectError.from(opts.signal?.reason ?? error, Code.Canceled)
-      }
-      retryDelay += 50
-    }
-  }
-
-  /** Replay retained Tail records, then follow new output until the platform reports completion.
-   * Accepts the command returned by runCommand() or its cmdId.
-   * Breaking iteration cancels the upstream subscription. Platform resets fail
-   * the stream; use readLogs() to retrieve historical output.
-   */
-  streamLogs(
-    command: SandboxCommandExecution | string,
-    opts: StreamLogsOpts & {encoding: 'buffer'},
-  ): AsyncGenerator<SandboxCommandLogBatch<Uint8Array>>
-  streamLogs(
-    command: SandboxCommandExecution | string,
-    opts?: StreamLogsOpts & {encoding?: BufferEncoding},
-  ): AsyncGenerator<SandboxCommandLogBatch>
-  streamLogs(
-    command: SandboxCommandExecution | string,
-    opts: StreamLogsOpts,
-  ): AsyncGenerator<SandboxCommandLogBatch<string | Uint8Array>>
-  async *streamLogs(
-    command: SandboxCommandExecution | string,
-    opts: StreamLogsOpts = {},
-  ): AsyncGenerator<SandboxCommandLogBatch<string | Uint8Array>> {
-    const encoding = commandLogEncoding(opts.encoding)
-    const controller = new AbortController()
-    const signal = opts.signal ? AbortSignal.any([opts.signal, controller.signal]) : controller.signal
-    let complete = false
-    try {
-      for await (const response of this.client.rpc.streamCommandLogs(
-        {
-          sandbox: {selector: {case: 'id', value: this.sandboxId}},
-          cmdId: typeof command === 'string' ? command : command.cmdId,
-        },
-        {signal, timeoutMs: opts.timeoutMs},
-      )) {
-        complete ||= response.complete
-        yield {entries: response.entries.map((entry) => commandLogEntry(entry, encoding)), complete: response.complete}
-      }
-      if (!complete) throw new ConnectError('Log stream closed before command completion', Code.Unavailable)
-    } finally {
-      controller.abort()
-    }
-  }
-
   /**
    * Run a command in this sandbox. This is a server-streaming call, and it
    * returns the {@link SandboxCommandExecution} as soon as the server reports
@@ -412,7 +309,7 @@ export class Sandbox {
    * the shared buffer.
    *
    * Detached commands keep running after this method returns. Read their retained
-   * output with readLogs() or follow it with streamLogs(). Execution-object
+   * output with sandbox.logs.fetch() or follow it with sandbox.logs.stream(). Execution-object
    * logs(), output(), and wait() remain unavailable in detached mode.
    */
   async runCommand(opts: RunCommandOpts): Promise<SandboxCommandExecution> {
@@ -796,25 +693,4 @@ function filterToProto(filter: ListFilter): ListSandboxesFilterProto {
     createdAfter: filter.createdAfter !== undefined ? timestampFromDate(filter.createdAfter) : undefined,
     createdBefore: filter.createdBefore !== undefined ? timestampFromDate(filter.createdBefore) : undefined,
   })
-}
-
-function commandLogEncoding(encoding: BufferEncoding | 'buffer' = 'utf8') {
-  if (encoding !== 'buffer' && !Buffer.isEncoding(encoding)) throw new TypeError(`Unknown log encoding: ${encoding}`)
-  return encoding
-}
-
-function commandLogEntry(
-  entry: LogEntryProto,
-  encoding: BufferEncoding | 'buffer',
-): SandboxCommandLogEntry<string | Uint8Array> {
-  if (entry.stream !== 'stdout' && entry.stream !== 'stderr') {
-    throw new ConnectError('Unknown command log channel', Code.DataLoss)
-  }
-  if (!entry.timestamp) throw new ConnectError('Command log timestamp is missing', Code.DataLoss)
-  return {
-    data: encoding === 'buffer' ? entry.data : Buffer.from(entry.data).toString(encoding),
-    stream: entry.stream,
-    timestamp: logTimestamp(entry.timestamp),
-    lineNumber: entry.lineNumber,
-  }
 }

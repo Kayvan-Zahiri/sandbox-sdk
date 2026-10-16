@@ -30,9 +30,17 @@ message FetchSandboxLogsRequest {
   string source = 4;
   // Case-sensitive text contained in the message. Leave empty to include all messages.
   string search_text = 5;
+  // Unique identifier for the command. Returned by `RunCommand`. Leave empty to include all commands.
+  string command_id = 6;
+  // Exact display group. Leave empty to include all groups. Sandboxes currently use "root".
+  string group_id = 7;
 }
 
 message TailSandboxLogsRequest {
+  // Unique identifier for the command. Returned by `RunCommand`. Leave empty to include all commands.
+  string command_id = 4;
+  // Exact display group. Leave empty to include all groups. Sandboxes currently use "root".
+  string group_id = 5;
   // Sandbox to query. Returned by CreateSandbox and GetSandbox.
   SandboxRef sandbox = 1;
   // Number of recent records to return. Maximum: 10000. Default: 100.
@@ -42,6 +50,10 @@ message TailSandboxLogsRequest {
 }
 
 message StreamSandboxLogsRequest {
+  // Unique identifier for the command. Returned by `RunCommand`. Leave empty to include all commands.
+  string command_id = 5;
+  // Exact display group. Leave empty to include all groups. Sandboxes currently use "root".
+  string group_id = 6;
   // Sandbox to follow. Returned by CreateSandbox and GetSandbox.
   SandboxRef sandbox = 1;
   // Replay mode. Can be "all", "since", or "none". Default: "none". All replays only records still retained in Tail.

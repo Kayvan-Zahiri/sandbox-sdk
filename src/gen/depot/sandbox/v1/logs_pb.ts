@@ -16,7 +16,7 @@ import {file_depot_sandbox_v1_refs} from './refs_pb.js'
 export const file_depot_sandbox_v1_logs: GenFile =
   /*@__PURE__*/
   fileDesc(
-    'ChtkZXBvdC9zYW5kYm94L3YxL2xvZ3MucHJvdG8SEGRlcG90LnNhbmRib3gudjEiiQEKD1NhbmRib3hMb2dFbnRyeRIPCgdtZXNzYWdlGAEgASgJEg4KBnNvdXJjZRgCIAEoCRItCgl0aW1lc3RhbXAYAyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhEKCW9iamVjdF9pZBgEIAEoCRITCgtjb250ZXh0X2lkcxgFIAMoCSLDAQoXRmV0Y2hTYW5kYm94TG9nc1JlcXVlc3QSLQoHc2FuZGJveBgBIAEoCzIcLmRlcG90LnNhbmRib3gudjEuU2FuZGJveFJlZhIpCgVzaW5jZRgCIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASKQoFdW50aWwYAyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEg4KBnNvdXJjZRgEIAEoCRITCgtzZWFyY2hfdGV4dBgFIAEoCSJ5ChZUYWlsU2FuZGJveExvZ3NSZXF1ZXN0Ei0KB3NhbmRib3gYASABKAsyHC5kZXBvdC5zYW5kYm94LnYxLlNhbmRib3hSZWYSFAoHZW50cmllcxgCIAEoDUgAiAEBEg4KBnNvdXJjZRgDIAEoCUIKCghfZW50cmllcyKUAQoYU3RyZWFtU2FuZGJveExvZ3NSZXF1ZXN0Ei0KB3NhbmRib3gYASABKAsyHC5kZXBvdC5zYW5kYm94LnYxLlNhbmRib3hSZWYSDgoGcmVwbGF5GAIgASgJEikKBXNpbmNlGAMgASgLMhouZ29vZ2xlLnByb3RvYnVmLlRpbWVzdGFtcBIOCgZzb3VyY2UYBCABKAliBnByb3RvMw',
+    'ChtkZXBvdC9zYW5kYm94L3YxL2xvZ3MucHJvdG8SEGRlcG90LnNhbmRib3gudjEiiQEKD1NhbmRib3hMb2dFbnRyeRIPCgdtZXNzYWdlGAEgASgJEg4KBnNvdXJjZRgCIAEoCRItCgl0aW1lc3RhbXAYAyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhEKCW9iamVjdF9pZBgEIAEoCRITCgtjb250ZXh0X2lkcxgFIAMoCSLpAQoXRmV0Y2hTYW5kYm94TG9nc1JlcXVlc3QSLQoHc2FuZGJveBgBIAEoCzIcLmRlcG90LnNhbmRib3gudjEuU2FuZGJveFJlZhIpCgVzaW5jZRgCIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASKQoFdW50aWwYAyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEg4KBnNvdXJjZRgEIAEoCRITCgtzZWFyY2hfdGV4dBgFIAEoCRISCgpjb21tYW5kX2lkGAYgASgJEhAKCGdyb3VwX2lkGAcgASgJIp8BChZUYWlsU2FuZGJveExvZ3NSZXF1ZXN0EhIKCmNvbW1hbmRfaWQYBCABKAkSEAoIZ3JvdXBfaWQYBSABKAkSLQoHc2FuZGJveBgBIAEoCzIcLmRlcG90LnNhbmRib3gudjEuU2FuZGJveFJlZhIUCgdlbnRyaWVzGAIgASgNSACIAQESDgoGc291cmNlGAMgASgJQgoKCF9lbnRyaWVzIroBChhTdHJlYW1TYW5kYm94TG9nc1JlcXVlc3QSEgoKY29tbWFuZF9pZBgFIAEoCRIQCghncm91cF9pZBgGIAEoCRItCgdzYW5kYm94GAEgASgLMhwuZGVwb3Quc2FuZGJveC52MS5TYW5kYm94UmVmEg4KBnJlcGxheRgCIAEoCRIpCgVzaW5jZRgDIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASDgoGc291cmNlGAQgASgJYgZwcm90bzM',
     [file_depot_sandbox_v1_refs, file_google_protobuf_timestamp],
   )
 
@@ -108,6 +108,20 @@ export type FetchSandboxLogsRequest = Message<'depot.sandbox.v1.FetchSandboxLogs
    * @generated from field: string search_text = 5;
    */
   searchText: string
+
+  /**
+   * Unique identifier for the command. Returned by `RunCommand`. Leave empty to include all commands.
+   *
+   * @generated from field: string command_id = 6;
+   */
+  commandId: string
+
+  /**
+   * Exact display group. Leave empty to include all groups. Sandboxes currently use "root".
+   *
+   * @generated from field: string group_id = 7;
+   */
+  groupId: string
 }
 
 /**
@@ -122,6 +136,20 @@ export const FetchSandboxLogsRequestSchema: GenMessage<FetchSandboxLogsRequest> 
  * @generated from message depot.sandbox.v1.TailSandboxLogsRequest
  */
 export type TailSandboxLogsRequest = Message<'depot.sandbox.v1.TailSandboxLogsRequest'> & {
+  /**
+   * Unique identifier for the command. Returned by `RunCommand`. Leave empty to include all commands.
+   *
+   * @generated from field: string command_id = 4;
+   */
+  commandId: string
+
+  /**
+   * Exact display group. Leave empty to include all groups. Sandboxes currently use "root".
+   *
+   * @generated from field: string group_id = 5;
+   */
+  groupId: string
+
   /**
    * Sandbox to query. Returned by CreateSandbox and GetSandbox.
    *
@@ -156,6 +184,20 @@ export const TailSandboxLogsRequestSchema: GenMessage<TailSandboxLogsRequest> =
  * @generated from message depot.sandbox.v1.StreamSandboxLogsRequest
  */
 export type StreamSandboxLogsRequest = Message<'depot.sandbox.v1.StreamSandboxLogsRequest'> & {
+  /**
+   * Unique identifier for the command. Returned by `RunCommand`. Leave empty to include all commands.
+   *
+   * @generated from field: string command_id = 5;
+   */
+  commandId: string
+
+  /**
+   * Exact display group. Leave empty to include all groups. Sandboxes currently use "root".
+   *
+   * @generated from field: string group_id = 6;
+   */
+  groupId: string
+
   /**
    * Sandbox to follow. Returned by CreateSandbox and GetSandbox.
    *

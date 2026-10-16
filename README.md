@@ -132,61 +132,30 @@ If a published version has incorrect release metadata or npm dist-tags, prefer f
 
 MIT License, see `LICENSE`.
 
-## Detached command logs
+## Sandbox logs
 
-Use `streamLogs()` to replay records retained by Tail and follow new output. The
-stream reports `complete: true` when the Log Platform observes command EOF,
-including for commands with no output. Breaking iteration cancels the subscription.
-Pass the command returned by `runCommand()` or its `cmdId`.
+Use `sandbox.logs.fetch()`, `.tail()`, and `.stream()` for captured output,
+including detached commands. These replace the earlier `sandbox.readLogs()` and
+`sandbox.streamLogs()` methods and their option/result types. Retained records
+are UTF-8 text; the API does not expose command completion, truncation flags,
+raw-byte encoding options, or automatic read retries. Empty results do not prove
+that ingestion is complete.
 
-```typescript
+To select one command's output, pass the command object or its ID to `fetch()`:
+
+```ts
+const since = new Date()
 const command = await sandbox.runCommand({cmd: 'echo', args: ['hello'], detached: true})
-for await (const batch of sandbox.streamLogs(command, {timeoutMs: 30_000})) {
-  for (const entry of batch.entries) {
-    console.log(entry.stream, entry.data)
-  }
-}
 
-const snapshot = await sandbox.readLogs(command.cmdId, {limit: 1000})
-console.log(snapshot.complete, snapshot.truncated)
-```
-
-`readLogs()` returns completed retained records, including historical output after
-Tail retention. Each server attempt waits up to 250 ms for command EOF, returning
-`UNAVAILABLE` if output is still pending. The SDK retries that code after linear
-delays of 50 ms, 100 ms, 150 ms, and so on, without jitter. All requests and delays
-share a one-second budget; `timeoutMs` can shorten it. Each attempt receives the
-remaining deadline. Cancellation stops requests and backoff. If no retry fits the
-remaining budget, the last `UNAVAILABLE` is thrown. Other errors are not retried.
-
-A successful silent command has empty entries and `complete: true`. Completed
-output can still be truncated. Each retry replaces the previous snapshot; records
-are not appended or duplicated. There is no historical page token.
-
-A new `streamLogs()` call replays records still held by Tail and can repeat output
-from a previous call. Platform resets, expired grants, and closure without
-completion throw instead of reporting success. Streams last at most four minutes.
-No automatic reconnect or historical-to-live handoff is performed. Use a direct
-read for completed commands outside Tail retention and streaming for partial or
-long-running output.
-
-Records default to UTF-8 strings and preserve channel, timestamp, and line number.
-Both methods accept `encoding` for another Node.js text encoding, such as `'latin1'`.
-Pass `{encoding: 'buffer'}` to receive raw `Uint8Array` data instead:
-
-```typescript
-const snapshot = await sandbox.readLogs(command.cmdId, {encoding: 'buffer'})
-for await (const batch of sandbox.streamLogs(command, {encoding: 'buffer'})) {
-  // Each entry.data is a Uint8Array.
+for await (const entry of sandbox.logs.fetch({since, command, group: 'root'})) {
+  console.log(entry.message)
 }
 ```
 
-Invalid UTF-8 bytes become replacement characters in text mode; use `'buffer'`
-to preserve every byte. Capture removes line delimiters, so these records differ from the exact
-process bytes available on attached commands. Capture must be enabled for the
-sandbox; commands from older producers may never report log completion.
-Execution-object `logs()`, `output()`, and `wait()` retain their attached-command
-semantics and remain unavailable for detached commands.
+Capture and export are asynchronous, so an immediate query can be empty.
+Execution-object `logs()`, `output()`, and `wait()` keep their attached-command
+semantics and remain unavailable for detached commands. Attached output APIs
+provide the exact process bytes; captured records remove line delimiters.
 
 ### Query retained sandbox logs
 
@@ -212,15 +181,16 @@ for await (const entry of sandbox.logs.tail({entries: 20})) {
 the current time. Source can be `stdout`, `stderr`, `unknown`, or `system`; omitted source
 includes all permitted sources. `unknown` represents unspecified customer output.
 System records are staff-only and are never returned by these customer methods,
-even when `system` is requested as a filter. `searchText` is a case-sensitive substring.
+even when `system` is requested as a filter. `searchText` is a case-sensitive substring. `command` selects one executed command (object or ID); `group` selects a display group (`"root"` today);
+Omit either filter to include all matching commands or groups. These filters combine with the time range and source.
 The maximum query range is 35 days; oversized queries fail with
 `RESOURCE_EXHAUSTED` rather than silently omit records.
 
 `tail()` returns the latest records in chronological order and finishes; it does
 not follow new logs. It defaults to 100 records, accepts 0 through 10,000, and
-searches up to 30 days subject to retention. Its only filter is `source`.
+searches up to 30 days subject to retention. It accepts `source`, `command`, and `group` filters.
 
-`stream()` follows live arrivals across commands. It yields the same `LogEntry`
+`stream()` follows live arrivals across commands. It also accepts `command` and `group`; a command-filtered stream finishes at that command’s EOF. It yields the same `LogEntry`
 shape as `fetch()` and `tail()`. Replay is explicit:
 
 ```ts

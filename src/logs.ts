@@ -1,6 +1,7 @@
 import {timestampFromDate} from '@bufbuild/protobuf/wkt'
 import {Code, ConnectError} from '@connectrpc/connect'
 import type {SandboxClient} from './client.js'
+import type {SandboxCommandExecution} from './command.js'
 import type {SandboxLogEntry} from './gen/depot/sandbox/v1/logs_pb.js'
 import {logTimestamp} from './log-timestamp.js'
 
@@ -14,20 +15,26 @@ export interface LogEntry {
   readonly objectId: string
   readonly contextIds: string[]
 }
-export interface SandboxLogFetchParams {
+interface SandboxLogFilters {
+  /** Command object or command ID. Omit to include all commands. */
+  command?: SandboxCommandExecution | string
+  /** Exact display group. Sandboxes currently use 'root'. */
+  group?: string
+}
+export interface SandboxLogFetchParams extends SandboxLogFilters {
   since: Date
   until?: Date
   source?: LogSource
   /** Case-sensitive text contained in the message. */
   searchText?: string
 }
-export interface SandboxLogTailParams {
+export interface SandboxLogTailParams extends SandboxLogFilters {
   /** Number of latest records. Default: 100. Maximum: 10000. */
   entries?: number
   source?: LogSource
 }
 
-export interface SandboxLogStreamParams {
+export interface SandboxLogStreamParams extends SandboxLogFilters {
   /** Replay retained Tail output, start at a capture timestamp, or follow only new arrivals. Default: 'none'. */
   replay?: 'all' | Date | 'none'
   source?: LogSource
@@ -41,6 +48,13 @@ export class SandboxLogs {
     private readonly client: SandboxClient,
     private readonly sandboxId: string,
   ) {}
+
+  private commandId(command: SandboxCommandExecution | string | undefined): string | undefined {
+    if (typeof command === 'object' && command.sandboxId !== this.sandboxId) {
+      throw new TypeError('command must belong to this sandbox')
+    }
+    return typeof command === 'string' ? command : command?.cmdId
+  }
 
   /** Fetch available records in [since, until), in chronological order. Does not follow new logs. */
   async *fetch(params: SandboxLogFetchParams): AsyncIterable<LogEntry> {
@@ -61,6 +75,8 @@ export class SandboxLogs {
           since: timestampFromDate(params.since),
           until: timestampFromDate(until),
           source: params.source,
+          commandId: this.commandId(params.command),
+          groupId: params.group,
           searchText: params.searchText,
         },
         {signal: controller.signal},
@@ -71,7 +87,7 @@ export class SandboxLogs {
     }
   }
 
-  /** Follow new arrivals, optionally replaying output still retained in Tail. Does not stop at command completion. */
+  /** Follow new arrivals, optionally replaying output still retained in Tail. A command filter ends at that command’s completion. */
   async *stream(params: SandboxLogStreamParams = {}): AsyncIterable<LogEntry> {
     const replay = params.replay ?? 'none'
     if (replay instanceof Date ? !Number.isFinite(replay.getTime()) : replay !== 'all' && replay !== 'none') {
@@ -86,6 +102,8 @@ export class SandboxLogs {
           replay: replay instanceof Date ? 'since' : replay,
           since: replay instanceof Date ? timestampFromDate(replay) : undefined,
           source: params.source,
+          commandId: this.commandId(params.command),
+          groupId: params.group,
         },
         {signal},
       ))
@@ -104,6 +122,8 @@ export class SandboxLogs {
           sandbox: {selector: {case: 'id', value: this.sandboxId}},
           entries: params.entries,
           source: params.source,
+          commandId: this.commandId(params.command),
+          groupId: params.group,
         },
         {signal: controller.signal},
       ))
