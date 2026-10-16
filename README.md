@@ -141,13 +141,13 @@ are UTF-8 text; the API does not expose command completion, truncation flags,
 raw-byte encoding options, or automatic read retries. Empty results do not prove
 that ingestion is complete.
 
-To select one command's output, pass its `cmdId` to `fetch()`:
+To select one command's output, pass the command object or its ID to `fetch()`:
 
 ```ts
 const since = new Date()
 const command = await sandbox.runCommand({cmd: 'echo', args: ['hello'], detached: true})
 
-for await (const entry of sandbox.logs.fetch({since, cmdId: command.cmdId})) {
+for await (const entry of sandbox.logs.fetch({since, command, group: 'root'})) {
   console.log(entry.message)
 }
 ```
@@ -181,16 +181,16 @@ for await (const entry of sandbox.logs.tail({entries: 20})) {
 the current time. Source can be `stdout`, `stderr`, `unknown`, or `system`; omitted source
 includes all permitted sources. `unknown` represents unspecified customer output.
 System records are staff-only and are never returned by these customer methods,
-even when `system` is requested as a filter. `searchText` is a case-sensitive substring. `cmdId` selects one executed command;
-omit it to include all commands. These filters combine with the time range and source.
+even when `system` is requested as a filter. `searchText` is a case-sensitive substring. `command` selects one executed command (object or ID); `group` selects a display group (`"root"` today);
+Omit either filter to include all matching commands or groups. These filters combine with the time range and source.
 The maximum query range is 35 days; oversized queries fail with
 `RESOURCE_EXHAUSTED` rather than silently omit records.
 
 `tail()` returns the latest records in chronological order and finishes; it does
 not follow new logs. It defaults to 100 records, accepts 0 through 10,000, and
-searches up to 30 days subject to retention. Its only filter is `source`.
+searches up to 30 days subject to retention. It accepts `source`, `command`, and `group` filters.
 
-`stream()` follows live arrivals across commands. It yields the same `LogEntry`
+`stream()` follows live arrivals across commands. It also accepts `command` and `group`; a command-filtered stream finishes at that command’s EOF. It yields the same `LogEntry`
 shape as `fetch()` and `tail()`. Replay is explicit:
 
 ```ts

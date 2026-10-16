@@ -48,12 +48,13 @@ test('logs.fetch forwards query filters and yields structured text records', asy
       assert.deepEqual(request.until, timestampFromDate(until))
       assert.equal(request.source, 'stdout')
       assert.equal(request.searchText, 'héllo')
-      assert.equal(request.cmdId, 'cmd')
+      assert.equal(request.commandId, 'cmd')
+      assert.equal(request.groupId, 'root')
       yield record
     },
   })
   const entries = await Array.fromAsync(
-    sb.logs.fetch({since, until, source: 'stdout', searchText: 'héllo', cmdId: 'cmd'}),
+    sb.logs.fetch({since, until, source: 'stdout', searchText: 'héllo', command: 'cmd', group: 'root'}),
   )
   assert.deepEqual(entries, [{...record, timestamp: since}])
   assert.equal('complete' in entries[0]!, false)
@@ -282,3 +283,37 @@ for (const [seconds, nanos, iso] of [
     }
   })
 }
+
+test('log filters accept command objects and reject another sandbox', async () => {
+  const command = {cmdId: 'cmd', sandboxId: 'sb'} as import('./command.js').SandboxCommandExecution
+  const sb = await sandbox({
+    async *fetchSandboxLogs(request) {
+      assert.equal(request.commandId, 'cmd')
+      assert.equal(request.groupId, 'root')
+      yield record
+    },
+    async *tailSandboxLogs(request) {
+      assert.equal(request.commandId, 'cmd')
+      assert.equal(request.groupId, 'root')
+      yield record
+    },
+    async *streamSandboxLogs(request) {
+      assert.equal(request.commandId, 'cmd')
+      assert.equal(request.groupId, 'root')
+      yield record
+    },
+  })
+  assert.equal((await Array.fromAsync(sb.logs.fetch({since, until, command, group: 'root'}))).length, 1)
+  assert.equal((await Array.fromAsync(sb.logs.tail({command, group: 'root'}))).length, 1)
+  assert.equal((await Array.fromAsync(sb.logs.stream({command, group: 'root'}))).length, 1)
+  await assert.rejects(
+    Array.fromAsync(
+      sb.logs.fetch({
+        since,
+        until,
+        command: Object.assign(Object.create(Object.getPrototypeOf(command)), command, {sandboxId: 'other'}),
+      }),
+    ),
+    /belong/,
+  )
+})

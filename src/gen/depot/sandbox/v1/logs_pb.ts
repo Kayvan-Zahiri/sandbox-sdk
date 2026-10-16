@@ -16,7 +16,7 @@ import {file_depot_sandbox_v1_refs} from './refs_pb.js'
 export const file_depot_sandbox_v1_logs: GenFile =
   /*@__PURE__*/
   fileDesc(
-    'ChtkZXBvdC9zYW5kYm94L3YxL2xvZ3MucHJvdG8SEGRlcG90LnNhbmRib3gudjEiiQEKD1NhbmRib3hMb2dFbnRyeRIPCgdtZXNzYWdlGAEgASgJEg4KBnNvdXJjZRgCIAEoCRItCgl0aW1lc3RhbXAYAyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhEKCW9iamVjdF9pZBgEIAEoCRITCgtjb250ZXh0X2lkcxgFIAMoCSLTAQoXRmV0Y2hTYW5kYm94TG9nc1JlcXVlc3QSLQoHc2FuZGJveBgBIAEoCzIcLmRlcG90LnNhbmRib3gudjEuU2FuZGJveFJlZhIpCgVzaW5jZRgCIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASKQoFdW50aWwYAyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEg4KBnNvdXJjZRgEIAEoCRITCgtzZWFyY2hfdGV4dBgFIAEoCRIOCgZjbWRfaWQYBiABKAkieQoWVGFpbFNhbmRib3hMb2dzUmVxdWVzdBItCgdzYW5kYm94GAEgASgLMhwuZGVwb3Quc2FuZGJveC52MS5TYW5kYm94UmVmEhQKB2VudHJpZXMYAiABKA1IAIgBARIOCgZzb3VyY2UYAyABKAlCCgoIX2VudHJpZXMilAEKGFN0cmVhbVNhbmRib3hMb2dzUmVxdWVzdBItCgdzYW5kYm94GAEgASgLMhwuZGVwb3Quc2FuZGJveC52MS5TYW5kYm94UmVmEg4KBnJlcGxheRgCIAEoCRIpCgVzaW5jZRgDIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASDgoGc291cmNlGAQgASgJYgZwcm90bzM',
+    'ChtkZXBvdC9zYW5kYm94L3YxL2xvZ3MucHJvdG8SEGRlcG90LnNhbmRib3gudjEiiQEKD1NhbmRib3hMb2dFbnRyeRIPCgdtZXNzYWdlGAEgASgJEg4KBnNvdXJjZRgCIAEoCRItCgl0aW1lc3RhbXAYAyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEhEKCW9iamVjdF9pZBgEIAEoCRITCgtjb250ZXh0X2lkcxgFIAMoCSLpAQoXRmV0Y2hTYW5kYm94TG9nc1JlcXVlc3QSLQoHc2FuZGJveBgBIAEoCzIcLmRlcG90LnNhbmRib3gudjEuU2FuZGJveFJlZhIpCgVzaW5jZRgCIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASKQoFdW50aWwYAyABKAsyGi5nb29nbGUucHJvdG9idWYuVGltZXN0YW1wEg4KBnNvdXJjZRgEIAEoCRITCgtzZWFyY2hfdGV4dBgFIAEoCRISCgpjb21tYW5kX2lkGAYgASgJEhAKCGdyb3VwX2lkGAcgASgJIp8BChZUYWlsU2FuZGJveExvZ3NSZXF1ZXN0EhIKCmNvbW1hbmRfaWQYBCABKAkSEAoIZ3JvdXBfaWQYBSABKAkSLQoHc2FuZGJveBgBIAEoCzIcLmRlcG90LnNhbmRib3gudjEuU2FuZGJveFJlZhIUCgdlbnRyaWVzGAIgASgNSACIAQESDgoGc291cmNlGAMgASgJQgoKCF9lbnRyaWVzIroBChhTdHJlYW1TYW5kYm94TG9nc1JlcXVlc3QSEgoKY29tbWFuZF9pZBgFIAEoCRIQCghncm91cF9pZBgGIAEoCRItCgdzYW5kYm94GAEgASgLMhwuZGVwb3Quc2FuZGJveC52MS5TYW5kYm94UmVmEg4KBnJlcGxheRgCIAEoCRIpCgVzaW5jZRgDIAEoCzIaLmdvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASDgoGc291cmNlGAQgASgJYgZwcm90bzM',
     [file_depot_sandbox_v1_refs, file_google_protobuf_timestamp],
   )
 
@@ -112,9 +112,16 @@ export type FetchSandboxLogsRequest = Message<'depot.sandbox.v1.FetchSandboxLogs
   /**
    * Command whose logs to return. Leave empty to include all commands.
    *
-   * @generated from field: string cmd_id = 6;
+   * @generated from field: string command_id = 6;
    */
-  cmdId: string
+  commandId: string
+
+  /**
+   * Exact display group. Leave empty to include all groups. Sandboxes currently use "root".
+   *
+   * @generated from field: string group_id = 7;
+   */
+  groupId: string
 }
 
 /**
@@ -129,6 +136,20 @@ export const FetchSandboxLogsRequestSchema: GenMessage<FetchSandboxLogsRequest> 
  * @generated from message depot.sandbox.v1.TailSandboxLogsRequest
  */
 export type TailSandboxLogsRequest = Message<'depot.sandbox.v1.TailSandboxLogsRequest'> & {
+  /**
+   * Command whose logs to return. Leave empty to include all commands.
+   *
+   * @generated from field: string command_id = 4;
+   */
+  commandId: string
+
+  /**
+   * Exact display group. Leave empty to include all groups.
+   *
+   * @generated from field: string group_id = 5;
+   */
+  groupId: string
+
   /**
    * Sandbox to query. Returned by CreateSandbox and GetSandbox.
    *
@@ -163,6 +184,20 @@ export const TailSandboxLogsRequestSchema: GenMessage<TailSandboxLogsRequest> =
  * @generated from message depot.sandbox.v1.StreamSandboxLogsRequest
  */
 export type StreamSandboxLogsRequest = Message<'depot.sandbox.v1.StreamSandboxLogsRequest'> & {
+  /**
+   * Command whose logs to return. Leave empty to include all commands.
+   *
+   * @generated from field: string command_id = 5;
+   */
+  commandId: string
+
+  /**
+   * Exact display group. Leave empty to include all groups.
+   *
+   * @generated from field: string group_id = 6;
+   */
+  groupId: string
+
   /**
    * Sandbox to follow. Returned by CreateSandbox and GetSandbox.
    *
