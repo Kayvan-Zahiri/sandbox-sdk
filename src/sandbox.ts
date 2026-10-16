@@ -21,6 +21,7 @@ import {
   type SandboxConfiguration as SandboxConfigurationProto,
   type Sandbox as SandboxProto,
 } from './gen/depot/sandbox/v1/sandbox_pb.js'
+import {logTimestamp} from './log-timestamp.js'
 import {SandboxLogs} from './logs.js'
 import {SandboxTailnet} from './tailnet.js'
 import type {
@@ -813,7 +814,7 @@ function commandLogEntry(
   return {
     data: encoding === 'buffer' ? entry.data : Buffer.from(entry.data).toString(encoding),
     stream: entry.stream,
-    timestamp: timestampDate(entry.timestamp),
+    timestamp: logTimestamp(entry.timestamp),
     lineNumber: entry.lineNumber,
   }
 }

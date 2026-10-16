@@ -229,3 +229,44 @@ test('logs.stream supports cancellation while waiting and cancels on break', asy
   await assert.rejects(pending, (error: unknown) => error instanceof ConnectError && error.code === Code.Canceled)
   assert.equal(closed, true)
 })
+
+for (const [seconds, nanos, iso] of [
+  [1792136178n, 984737268, '2026-10-16T07:36:18.984Z'],
+  [1792136178n, 999999999, '2026-10-16T07:36:18.999Z'],
+  [1792136178n, 984000000, '2026-10-16T07:36:18.984Z'],
+  [-1n, 999999999, '1969-12-31T23:59:59.999Z'],
+] as const) {
+  test(`log timestamp ${seconds}:${nanos} preserves its inclusive replay boundary`, async () => {
+    const captured = {...record, timestamp: {seconds, nanos}}
+    const sb = await sandbox({
+      async *fetchSandboxLogs() {
+        yield captured
+      },
+      async *tailSandboxLogs() {
+        yield captured
+      },
+      async *streamSandboxLogs(request) {
+        if (
+          !request.since ||
+          request.since.seconds * 1_000_000_000n + BigInt(request.since.nanos) <=
+            seconds * 1_000_000_000n + BigInt(nanos)
+        )
+          yield captured
+      },
+    })
+    const expected = new Date(iso)
+    const fetched = await Array.fromAsync(
+      sb.logs.fetch({since: new Date(expected.getTime() - 1000), until: new Date(expected.getTime() + 1000)}),
+    )
+    const tail = await Array.fromAsync(sb.logs.tail())
+    const live = await Array.fromAsync(sb.logs.stream())
+    for (const entries of [fetched, tail, live]) {
+      assert.equal(entries[0]?.timestamp.toISOString(), iso)
+      const replay = await Array.fromAsync(sb.logs.stream({replay: entries[0]!.timestamp}))
+      assert.deepEqual(
+        replay.map((e) => e.message),
+        [record.message],
+      )
+    }
+  })
+}

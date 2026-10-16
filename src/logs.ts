@@ -1,7 +1,8 @@
-import {timestampDate, timestampFromDate} from '@bufbuild/protobuf/wkt'
+import {timestampFromDate} from '@bufbuild/protobuf/wkt'
 import {Code, ConnectError} from '@connectrpc/connect'
 import type {SandboxClient} from './client.js'
 import type {SandboxLogEntry} from './gen/depot/sandbox/v1/logs_pb.js'
+import {logTimestamp} from './log-timestamp.js'
 
 export type LogSource = 'stdout' | 'stderr' | 'system' | 'unknown'
 
@@ -120,7 +121,7 @@ function logEntry(entry: SandboxLogEntry): LogEntry {
   return {
     message: entry.message,
     source: entry.source as LogSource,
-    timestamp: timestampDate(entry.timestamp),
+    timestamp: logTimestamp(entry.timestamp),
     objectId: entry.objectId,
     contextIds: [...entry.contextIds],
   }
