@@ -80,19 +80,33 @@ console.log(sandbox.architecture) // 'arm64'
 
 A custom `runtime.imageRef` must be hosted on `registry.depot.dev` on either architecture; any other registry fails create with `InvalidArgument`. For `arm64`, the image must also publish a `linux/arm64` variant. If it doesn't, create succeeds but the sandbox ends in the `failed` status when it boots.
 
+### Snapshots
+
+`sandbox.snapshot()` captures a running sandbox's files, under `/workspace` and the home directory, into a snapshot. Pass the snapshot, or its `snapshotId`, to `Sandbox.create` to boot a new sandbox with those files restored before it starts running.
+
+```typescript
+await sandbox.fs().writeFile('/workspace/notes.txt', 'hello')
+const snapshot = await sandbox.snapshot()
+
+const copy = await Sandbox.create(client, {snapshot})
+console.log(await copy.fs().readFile('/workspace/notes.txt', {encoding: 'utf8'}))
+```
+
+The new sandbox uses the snapshot's runtime and architecture unless you set `runtime` yourself. Setting an `architecture` that differs from the snapshot's fails create with `InvalidArgument`.
+
 ## Beta Surface
 
 This beta package currently includes:
 
 - `createClient`
-- `Sandbox.create` (including CI secrets and `architecture`), `Sandbox.get`, `Sandbox.list`, `Sandbox.listAll`
-- `sandbox.stop`, `sandbox.kill`, `sandbox.setTimeout`, `sandbox.runCommand`, `sandbox.fs`
+- `Sandbox.create` (including CI secrets, `architecture`, and `snapshot`), `Sandbox.get`, `Sandbox.list`, `Sandbox.listAll`
+- `sandbox.stop`, `sandbox.kill`, `sandbox.setTimeout`, `sandbox.runCommand`, `sandbox.fs`, `sandbox.snapshot`
 - `SandboxCommandExecution.wait`, `logs`, `output`, `stdout`, and `stderr`
 - `FileSystem` helpers for common file operations
 - `sandbox.tailnet`: `status()` and `waitForAddress()`, which report the sandbox's live MagicDNS name and IPs on your organization's tailnet; opt out with `disableTailnet` on create
 - Depot Cache: every command gets your organization's Depot Cache credentials for sccache, Turborepo, and Nx, plus `DEPOT_CACHE_HOST` and `DEPOT_CACHE_TOKEN` for other tools; opt out with `disableDepotCache` on create
 
-Other sandbox capabilities, such as piped stdin, command history, snapshots, and pty support, are not part of this beta surface yet.
+Other sandbox capabilities, such as piped stdin, command history, and pty support, are not part of this beta surface yet.
 
 ## Generated Protos
 

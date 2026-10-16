@@ -73,6 +73,17 @@ export interface Resources {
  */
 export type Runtime = {readonly named: string} | {readonly imageRef: string}
 
+/** A copy of a sandbox's files from {@link Sandbox.snapshot}, accepted by {@link Sandbox.create}. */
+export interface Snapshot {
+  readonly snapshotId: string
+  readonly sourceSandboxId: string
+  readonly createdAt: Date | undefined
+  readonly sizeBytes: number
+  readonly fileCount: number
+  readonly runtime: Runtime | undefined
+  readonly architecture: Architecture | undefined
+}
+
 /** Narrows the results of {@link Sandbox.list} and {@link Sandbox.listAll}. */
 export interface ListFilter {
   /** When set, only return sandboxes whose status is one of these values. */

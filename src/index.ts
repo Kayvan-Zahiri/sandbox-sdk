@@ -1,6 +1,6 @@
 // Public surface of @depot/sandbox.
 //
-// Lifecycle surface: create + get + list + listAll + stop + kill + setTimeout. Sandbox
+// Lifecycle surface: create + get + list + listAll + stop + kill + setTimeout + snapshot. Sandbox
 // instances carry their client, so instance methods and child objects do not
 // require callers to pass it again.
 
@@ -51,6 +51,7 @@ export type {
   SandboxCommandExecutionStatus,
   SandboxConfiguration,
   SandboxStatus,
+  Snapshot,
 } from './types.js'
 
 export {
