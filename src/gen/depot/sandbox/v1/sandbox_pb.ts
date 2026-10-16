@@ -499,9 +499,7 @@ export type CreateSandboxRequest = Message<'depot.sandbox.v1.CreateSandboxReques
   architecture?: Architecture
 
   /**
-   * Commands get Depot Cache credentials for sccache, Turborepo and Nx as
-   * environment variables; a tool is skipped when `env` or the command sets any
-   * of its variables. Set to true to skip them all. Default: false.
+   * Skip the Depot Cache environment every command otherwise gets. Default: false.
    *
    * @generated from field: optional bool disable_depot_cache = 11;
    */
