@@ -302,9 +302,9 @@ message CreateSandboxRequest {
   // CPU architecture to run the sandbox on. The image in `runtime` must have a
   // variant for it; the default image does. Default: ARCHITECTURE_AMD64.
   optional Architecture architecture = 10;
-  // Commands in the sandbox get Depot Cache credentials for sccache, Turborepo
-  // and Nx as environment variables, unless the command sets any variable of a
-  // tool's group itself. Set to true to skip them. Default: false.
+  // Commands get Depot Cache credentials for sccache, Turborepo and Nx as
+  // environment variables; a tool is skipped when `env` or the command sets any
+  // of its variables. Set to true to skip them all. Default: false.
   optional bool disable_depot_cache = 11;
 }
 
