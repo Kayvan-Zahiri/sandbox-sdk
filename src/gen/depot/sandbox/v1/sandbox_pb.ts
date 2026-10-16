@@ -506,7 +506,7 @@ export type CreateSandboxRequest = Message<'depot.sandbox.v1.CreateSandboxReques
   disableDepotCache?: boolean
 
   /**
-   * Boot with this snapshot's files restored; runtime and architecture default to its.
+   * Snapshot whose files to restore before the sandbox is returned; `runtime` and `architecture` default to its own.
    *
    * @generated from field: optional depot.sandbox.v1.SnapshotRef snapshot = 12;
    */
@@ -827,55 +827,55 @@ export const SetSandboxTimeoutResponseSchema: GenMessage<SetSandboxTimeoutRespon
   messageDesc(file_depot_sandbox_v1_sandbox, 16)
 
 /**
- * A point-in-time copy of a sandbox's files.
+ * A saved copy of a sandbox's files, made by `SnapshotSandbox`.
  *
  * @generated from message depot.sandbox.v1.Snapshot
  */
 export type Snapshot = Message<'depot.sandbox.v1.Snapshot'> & {
   /**
-   * Server-assigned snapshot identifier.
+   * Unique identifier for the snapshot. Pass it as `CreateSandboxRequest.snapshot` to boot a sandbox with these files.
    *
    * @generated from field: string snapshot_id = 1;
    */
   snapshotId: string
 
   /**
-   * The sandbox the snapshot was taken from.
+   * Identifier of the sandbox the files were saved from.
    *
    * @generated from field: string source_sandbox_id = 2;
    */
   sourceSandboxId: string
 
   /**
-   * Time the snapshot was taken, in RFC 3339 format.
+   * When the snapshot was saved, in RFC 3339 format.
    *
    * @generated from field: google.protobuf.Timestamp created_at = 3;
    */
   createdAt?: Timestamp
 
   /**
-   * Total size of the captured files, in bytes.
+   * Total size of the saved files, in bytes.
    *
    * @generated from field: int64 size_bytes = 4;
    */
   sizeBytes: bigint
 
   /**
-   * Number of files captured.
+   * Number of files, directories, and symlinks saved.
    *
    * @generated from field: int64 file_count = 5;
    */
   fileCount: bigint
 
   /**
-   * Runtime of the source sandbox.
+   * Runtime the source sandbox ran, which a sandbox created from the snapshot uses by default.
    *
    * @generated from field: depot.sandbox.v1.Runtime runtime = 6;
    */
   runtime?: Runtime
 
   /**
-   * Architecture of the source sandbox.
+   * Architecture the source sandbox ran on, which a sandbox created from the snapshot uses by default.
    *
    * @generated from field: depot.sandbox.v1.Architecture architecture = 7;
    */
@@ -889,13 +889,11 @@ export type Snapshot = Message<'depot.sandbox.v1.Snapshot'> & {
 export const SnapshotSchema: GenMessage<Snapshot> = /*@__PURE__*/ messageDesc(file_depot_sandbox_v1_sandbox, 17)
 
 /**
- * Request for SnapshotSandbox.
- *
  * @generated from message depot.sandbox.v1.SnapshotSandboxRequest
  */
 export type SnapshotSandboxRequest = Message<'depot.sandbox.v1.SnapshotSandboxRequest'> & {
   /**
-   * The sandbox to snapshot.
+   * The running sandbox whose files to save.
    *
    * @generated from field: depot.sandbox.v1.SandboxRef sandbox = 1;
    */
@@ -911,13 +909,11 @@ export const SnapshotSandboxRequestSchema: GenMessage<SnapshotSandboxRequest> =
   messageDesc(file_depot_sandbox_v1_sandbox, 18)
 
 /**
- * Response from SnapshotSandbox.
- *
  * @generated from message depot.sandbox.v1.SnapshotSandboxResponse
  */
 export type SnapshotSandboxResponse = Message<'depot.sandbox.v1.SnapshotSandboxResponse'> & {
   /**
-   * The snapshot that was taken.
+   * The saved snapshot.
    *
    * @generated from field: depot.sandbox.v1.Snapshot snapshot = 1;
    */
@@ -1294,7 +1290,7 @@ export const SandboxService: GenService<{
     output: typeof WriteFileResponseSchema
   }
   /**
-   * SnapshotSandbox captures a running sandbox's files into a Snapshot.
+   * SnapshotSandbox saves a running sandbox's files so `CreateSandbox` can boot a new sandbox with them.
    *
    * @generated from rpc depot.sandbox.v1.SandboxService.SnapshotSandbox
    */

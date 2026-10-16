@@ -80,7 +80,7 @@ service SandboxService {
   // the file, followed by the bytes to write.
   rpc WriteFile(stream WriteFileRequest) returns (WriteFileResponse);
 
-  // SnapshotSandbox captures a running sandbox's files into a Snapshot.
+  // SnapshotSandbox saves a running sandbox's files so `CreateSandbox` can boot a new sandbox with them.
   rpc SnapshotSandbox(SnapshotSandboxRequest) returns (SnapshotSandboxResponse);
 }
 
@@ -307,7 +307,7 @@ message CreateSandboxRequest {
   optional Architecture architecture = 10;
   // Skip the Depot Cache environment every command otherwise gets. Default: false.
   optional bool disable_depot_cache = 11;
-  // Boot with this snapshot's files restored; runtime and architecture default to its.
+  // Snapshot whose files to restore before the sandbox is returned; `runtime` and `architecture` default to its own.
   optional SnapshotRef snapshot = 12;
 }
 
@@ -406,32 +406,30 @@ message SetSandboxTimeoutResponse {
   Sandbox sandbox = 1;
 }
 
-// A point-in-time copy of a sandbox's files.
+// A saved copy of a sandbox's files, made by `SnapshotSandbox`.
 message Snapshot {
-  // Server-assigned snapshot identifier.
+  // Unique identifier for the snapshot. Pass it as `CreateSandboxRequest.snapshot` to boot a sandbox with these files.
   string snapshot_id = 1;
-  // The sandbox the snapshot was taken from.
+  // Identifier of the sandbox the files were saved from.
   string source_sandbox_id = 2;
-  // Time the snapshot was taken, in RFC 3339 format.
+  // When the snapshot was saved, in RFC 3339 format.
   google.protobuf.Timestamp created_at = 3;
-  // Total size of the captured files, in bytes.
+  // Total size of the saved files, in bytes.
   int64 size_bytes = 4;
-  // Number of files captured.
+  // Number of files, directories, and symlinks saved.
   int64 file_count = 5;
-  // Runtime of the source sandbox.
+  // Runtime the source sandbox ran, which a sandbox created from the snapshot uses by default.
   Runtime runtime = 6;
-  // Architecture of the source sandbox.
+  // Architecture the source sandbox ran on, which a sandbox created from the snapshot uses by default.
   Architecture architecture = 7;
 }
 
-// Request for SnapshotSandbox.
 message SnapshotSandboxRequest {
-  // The sandbox to snapshot.
+  // The running sandbox whose files to save.
   SandboxRef sandbox = 1;
 }
 
-// Response from SnapshotSandbox.
 message SnapshotSandboxResponse {
-  // The snapshot that was taken.
+  // The saved snapshot.
   Snapshot snapshot = 1;
 }
