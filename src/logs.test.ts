@@ -31,6 +31,15 @@ async function sandbox(overrides: Partial<ServiceImpl<typeof SandboxService>>) {
   return Sandbox.get(client, 'sb')
 }
 
+test('retained logs use the sandbox.logs API', async () => {
+  const sb = await sandbox({})
+  assert.equal('readLogs' in sb, false)
+  assert.equal('streamLogs' in sb, false)
+  assert.equal(typeof sb.logs.fetch, 'function')
+  assert.equal(typeof sb.logs.tail, 'function')
+  assert.equal(typeof sb.logs.stream, 'function')
+})
+
 test('logs.fetch forwards query filters and yields structured text records', async () => {
   const sb = await sandbox({
     async *fetchSandboxLogs(request) {

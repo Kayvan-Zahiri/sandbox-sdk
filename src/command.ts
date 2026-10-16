@@ -488,11 +488,11 @@ export type SandboxCommandExecutionFinished = SandboxCommandExecution & {
 
 // A detached command runs fire-and-forget: the server never streams its output
 // back into this execution object. Its output methods remain unavailable;
-// Sandbox.readLogs() and Sandbox.streamLogs() retrieve retained records.
+// Sandbox.logs provides retained queries and sandbox-wide live output.
 function detachedUnavailable(): Error {
   return new Error(
     'this command was run detached: logs(), output(), and wait() are unavailable. ' +
-      'Use sandbox.readLogs(cmdId) or sandbox.streamLogs(cmdId) for retained output.',
+      'Use sandbox.logs.fetch() or sandbox.logs.stream() for retained output.',
   )
 }
 
