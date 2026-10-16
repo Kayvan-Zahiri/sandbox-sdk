@@ -246,6 +246,10 @@ minutes and then fail with `DEADLINE_EXCEEDED`. A reset or unexpected closure
 returns `UNAVAILABLE`; there is no automatic reconnect or durable catch-up.
 Starting another stream can repeat records when replay is enabled.
 
+Log timestamps have millisecond precision and round down. Reusing a returned
+entry's timestamp as an inclusive replay cutoff includes that boundary record;
+it may also repeat other records captured within the same millisecond.
+
 Queries include captured command logs while commands are running. Recent
 records can come from Tail storage, while older records become available after
 durable indexing. An empty result does not establish ingestion completion;

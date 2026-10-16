@@ -274,3 +274,29 @@ test('readLogs surfaces the last unavailable when the final request exhausts the
   )
   assert.equal(calls, 2)
 })
+
+test('command snapshots and streams round timestamps down for inclusive sandbox replay', async () => {
+  const captured = {...entry, timestamp: {seconds: 1792136178n, nanos: 984737268}}
+  const sb = await Sandbox.get(
+    client({
+      readCommandLogs: () => ({entries: [captured], complete: true}),
+      async *streamCommandLogs() {
+        yield {entries: [captured], complete: true}
+      },
+      async *streamSandboxLogs(request) {
+        const cutoff = request.since
+        assert.ok(cutoff)
+        if (cutoff.seconds * 1_000_000_000n + BigInt(cutoff.nanos) <= 1792136178984737268n) {
+          yield {message: 'boundary', source: 'stdout', timestamp: captured.timestamp, objectId: 'sb'}
+        }
+      },
+    }),
+    'sb',
+  )
+  const snapshot = await sb.readLogs('cmd')
+  const batches = await Array.fromAsync(sb.streamLogs('cmd'))
+  for (const returned of [snapshot.entries[0]!, batches[0]!.entries[0]!]) {
+    assert.equal(returned.timestamp.toISOString(), '2026-10-16T07:36:18.984Z')
+    assert.equal((await Array.fromAsync(sb.logs.stream({replay: returned.timestamp}))).length, 1)
+  }
+})
