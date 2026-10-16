@@ -161,6 +161,7 @@ export class Sandbox {
       staging: opts.staging,
       timeoutMinutes: opts.timeoutMinutes,
       disableTailnet: opts.disableTailnet,
+      disableDepotCache: opts.disableDepotCache,
       configuration: opts.configuration !== undefined ? configurationToProto(opts.configuration) : undefined,
       architecture: opts.architecture !== undefined ? architectureToProto(opts.architecture) : undefined,
     })
@@ -504,6 +505,8 @@ export interface CreateSandboxOpts {
   timeoutMinutes?: number
   /** Keep the sandbox off your organization's tailnet, which it otherwise joins when Tailscale is connected. */
   disableTailnet?: boolean
+  /** Skip the Depot Cache env (sccache, Turborepo, Nx, `DEPOT_CACHE_TOKEN`) every command otherwise gets. */
+  disableDepotCache?: boolean
   /** Configuration for every command, including the org CI secrets to inject. */
   configuration?: SandboxConfiguration
   /** CPU architecture to run on. Defaults to `amd64`. A custom `runtime` image without a matching variant fails at boot. */

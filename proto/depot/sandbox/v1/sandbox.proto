@@ -302,6 +302,8 @@ message CreateSandboxRequest {
   // CPU architecture to run the sandbox on. The image in `runtime` must have a
   // variant for it; the default image does. Default: ARCHITECTURE_AMD64.
   optional Architecture architecture = 10;
+  // Skip the Depot Cache environment every command otherwise gets. Default: false.
+  optional bool disable_depot_cache = 11;
 }
 
 message CreateSandboxResponse {

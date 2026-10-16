@@ -119,6 +119,7 @@ test('Sandbox.create takes an explicit client and binds it to the returned sandb
     staging: undefined,
     timeoutMinutes: undefined,
     disableTailnet: undefined,
+    disableDepotCache: undefined,
     configuration: undefined,
     architecture: undefined,
   })
@@ -224,6 +225,7 @@ test('Sandbox.create sends timeoutMinutes when provided', async () => {
     staging: undefined,
     timeoutMinutes: 120,
     disableTailnet: undefined,
+    disableDepotCache: undefined,
     configuration: undefined,
     architecture: undefined,
   })
@@ -426,6 +428,12 @@ test('Sandbox.create forwards disableTailnet', async () => {
   const recording = fakeClient({createSandbox: () => createResponse(makeSandbox())})
   await Sandbox.create(recording.client, {disableTailnet: true})
   assert.equal((recording.lastRequest('createSandbox') as {disableTailnet?: boolean}).disableTailnet, true)
+})
+
+test('Sandbox.create forwards disableDepotCache', async () => {
+  const recording = fakeClient({createSandbox: () => createResponse(makeSandbox())})
+  await Sandbox.create(recording.client, {disableDepotCache: true})
+  assert.equal((recording.lastRequest('createSandbox') as {disableDepotCache?: boolean}).disableDepotCache, true)
 })
 
 test('Sandbox.create sends architecture and exposes the resolved one', async () => {

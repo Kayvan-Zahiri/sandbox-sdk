@@ -90,6 +90,7 @@ This beta package currently includes:
 - `SandboxCommandExecution.wait`, `logs`, `output`, `stdout`, and `stderr`
 - `FileSystem` helpers for common file operations
 - `sandbox.tailnet`: `status()` and `waitForAddress()`, which report the sandbox's live MagicDNS name and IPs on your organization's tailnet; opt out with `disableTailnet` on create
+- Depot Cache: every command gets your organization's Depot Cache credentials for sccache, Turborepo, and Nx, plus `DEPOT_CACHE_HOST` and `DEPOT_CACHE_TOKEN` for other tools; opt out with `disableDepotCache` on create
 
 Other sandbox capabilities, such as piped stdin, command history, snapshots, and pty support, are not part of this beta surface yet.
 
