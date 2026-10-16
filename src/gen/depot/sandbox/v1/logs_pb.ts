@@ -110,7 +110,7 @@ export type FetchSandboxLogsRequest = Message<'depot.sandbox.v1.FetchSandboxLogs
   searchText: string
 
   /**
-   * Command whose logs to return. Leave empty to include all commands.
+   * Unique identifier for the command. Returned by `RunCommand`. Leave empty to include all commands.
    *
    * @generated from field: string command_id = 6;
    */
@@ -137,14 +137,14 @@ export const FetchSandboxLogsRequestSchema: GenMessage<FetchSandboxLogsRequest> 
  */
 export type TailSandboxLogsRequest = Message<'depot.sandbox.v1.TailSandboxLogsRequest'> & {
   /**
-   * Command whose logs to return. Leave empty to include all commands.
+   * Unique identifier for the command. Returned by `RunCommand`. Leave empty to include all commands.
    *
    * @generated from field: string command_id = 4;
    */
   commandId: string
 
   /**
-   * Exact display group. Leave empty to include all groups.
+   * Exact display group. Leave empty to include all groups. Sandboxes currently use "root".
    *
    * @generated from field: string group_id = 5;
    */
@@ -185,14 +185,14 @@ export const TailSandboxLogsRequestSchema: GenMessage<TailSandboxLogsRequest> =
  */
 export type StreamSandboxLogsRequest = Message<'depot.sandbox.v1.StreamSandboxLogsRequest'> & {
   /**
-   * Command whose logs to return. Leave empty to include all commands.
+   * Unique identifier for the command. Returned by `RunCommand`. Leave empty to include all commands.
    *
    * @generated from field: string command_id = 5;
    */
   commandId: string
 
   /**
-   * Exact display group. Leave empty to include all groups.
+   * Exact display group. Leave empty to include all groups. Sandboxes currently use "root".
    *
    * @generated from field: string group_id = 6;
    */

@@ -30,16 +30,16 @@ message FetchSandboxLogsRequest {
   string source = 4;
   // Case-sensitive text contained in the message. Leave empty to include all messages.
   string search_text = 5;
-  // Command whose logs to return. Leave empty to include all commands.
+  // Unique identifier for the command. Returned by `RunCommand`. Leave empty to include all commands.
   string command_id = 6;
   // Exact display group. Leave empty to include all groups. Sandboxes currently use "root".
   string group_id = 7;
 }
 
 message TailSandboxLogsRequest {
-  // Command whose logs to return. Leave empty to include all commands.
+  // Unique identifier for the command. Returned by `RunCommand`. Leave empty to include all commands.
   string command_id = 4;
-  // Exact display group. Leave empty to include all groups.
+  // Exact display group. Leave empty to include all groups. Sandboxes currently use "root".
   string group_id = 5;
   // Sandbox to query. Returned by CreateSandbox and GetSandbox.
   SandboxRef sandbox = 1;
@@ -50,9 +50,9 @@ message TailSandboxLogsRequest {
 }
 
 message StreamSandboxLogsRequest {
-  // Command whose logs to return. Leave empty to include all commands.
+  // Unique identifier for the command. Returned by `RunCommand`. Leave empty to include all commands.
   string command_id = 5;
-  // Exact display group. Leave empty to include all groups.
+  // Exact display group. Leave empty to include all groups. Sandboxes currently use "root".
   string group_id = 6;
   // Sandbox to follow. Returned by CreateSandbox and GetSandbox.
   SandboxRef sandbox = 1;
