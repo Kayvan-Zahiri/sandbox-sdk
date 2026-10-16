@@ -505,11 +505,7 @@ export interface CreateSandboxOpts {
   timeoutMinutes?: number
   /** Keep the sandbox off your organization's tailnet, which it otherwise joins when Tailscale is connected. */
   disableTailnet?: boolean
-  /**
-   * Skip Depot Cache. By default every command gets credentials for your organization's Depot Cache as
-   * environment variables (sccache, Turborepo, Nx, and `DEPOT_CACHE_HOST`/`DEPOT_CACHE_TOKEN`); a tool is
-   * left alone when the command or sandbox sets any of its variables itself.
-   */
+  /** Skip the Depot Cache env (sccache, Turborepo, Nx, `DEPOT_CACHE_TOKEN`) every command otherwise gets. */
   disableDepotCache?: boolean
   /** Configuration for every command, including the org CI secrets to inject. */
   configuration?: SandboxConfiguration
