@@ -82,14 +82,14 @@ A custom `runtime.imageRef` must be hosted on `registry.depot.dev` on either arc
 
 ### Snapshots
 
-`sandbox.snapshot()` captures a running sandbox's files, under `/workspace` and the home directory, into a snapshot. Pass the snapshot, or its `snapshotId`, to `Sandbox.create` to boot a new sandbox with those files restored before it starts running.
+`sandbox.snapshot()` captures a running sandbox's home directory (`/home/runner` on the default image), plus `/workspace` when it exists and is writable, into a snapshot. Pass the snapshot, or its `snapshotId`, to `Sandbox.create` to boot a new sandbox with those files restored before it starts running.
 
 ```typescript
-await sandbox.fs().writeFile('/workspace/notes.txt', 'hello')
+await sandbox.fs().writeFile('/home/runner/notes.txt', 'hello')
 const snapshot = await sandbox.snapshot()
 
 const copy = await Sandbox.create(client, {snapshot})
-console.log(await copy.fs().readFile('/workspace/notes.txt', {encoding: 'utf8'}))
+console.log(await copy.fs().readFile('/home/runner/notes.txt', {encoding: 'utf8'}))
 ```
 
 The new sandbox uses the snapshot's runtime and architecture unless you set `runtime` yourself. Setting an `architecture` that differs from the snapshot's fails create with `InvalidArgument`.
