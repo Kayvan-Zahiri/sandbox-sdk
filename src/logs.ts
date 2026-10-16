@@ -20,6 +20,8 @@ export interface SandboxLogFetchParams {
   source?: LogSource
   /** Case-sensitive text contained in the message. */
   searchText?: string
+  /** Command whose logs to return. Omit to include all commands. */
+  cmdId?: string
 }
 export interface SandboxLogTailParams {
   /** Number of latest records. Default: 100. Maximum: 10000. */
@@ -62,6 +64,7 @@ export class SandboxLogs {
           until: timestampFromDate(until),
           source: params.source,
           searchText: params.searchText,
+          cmdId: params.cmdId,
         },
         {signal: controller.signal},
       ))

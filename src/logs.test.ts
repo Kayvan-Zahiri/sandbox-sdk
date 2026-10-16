@@ -48,10 +48,13 @@ test('logs.fetch forwards query filters and yields structured text records', asy
       assert.deepEqual(request.until, timestampFromDate(until))
       assert.equal(request.source, 'stdout')
       assert.equal(request.searchText, 'héllo')
+      assert.equal(request.cmdId, 'cmd')
       yield record
     },
   })
-  const entries = await Array.fromAsync(sb.logs.fetch({since, until, source: 'stdout', searchText: 'héllo'}))
+  const entries = await Array.fromAsync(
+    sb.logs.fetch({since, until, source: 'stdout', searchText: 'héllo', cmdId: 'cmd'}),
+  )
   assert.deepEqual(entries, [{...record, timestamp: since}])
   assert.equal('complete' in entries[0]!, false)
   assert.equal('truncated' in entries[0]!, false)

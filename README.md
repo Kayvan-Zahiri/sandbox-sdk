@@ -141,14 +141,14 @@ are UTF-8 text; the API does not expose command completion, truncation flags,
 raw-byte encoding options, or automatic read retries. Empty results do not prove
 that ingestion is complete.
 
-To select a command's output, filter each entry's `contextIds`:
+To select one command's output, pass its `cmdId` to `fetch()`:
 
 ```ts
 const since = new Date()
 const command = await sandbox.runCommand({cmd: 'echo', args: ['hello'], detached: true})
 
-for await (const entry of sandbox.logs.fetch({since})) {
-  if (entry.contextIds.includes(command.cmdId)) console.log(entry.message)
+for await (const entry of sandbox.logs.fetch({since, cmdId: command.cmdId})) {
+  console.log(entry.message)
 }
 ```
 
@@ -181,7 +181,8 @@ for await (const entry of sandbox.logs.tail({entries: 20})) {
 the current time. Source can be `stdout`, `stderr`, `unknown`, or `system`; omitted source
 includes all permitted sources. `unknown` represents unspecified customer output.
 System records are staff-only and are never returned by these customer methods,
-even when `system` is requested as a filter. `searchText` is a case-sensitive substring.
+even when `system` is requested as a filter. `searchText` is a case-sensitive substring. `cmdId` selects one executed command;
+omit it to include all commands. These filters combine with the time range and source.
 The maximum query range is 35 days; oversized queries fail with
 `RESOURCE_EXHAUSTED` rather than silently omit records.
 
