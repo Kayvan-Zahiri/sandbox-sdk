@@ -5,6 +5,7 @@ import type {SandboxClient} from './client.js'
 import {_commandInternals, type SandboxCommandExecution} from './command.js'
 import {FileSystem} from './filesystem.js'
 import type {SandboxCommandExecutionEvent} from './gen/depot/sandbox/v1/command_pb.js'
+import {SnapshotRefSchema, type SnapshotRef as SnapshotRefProto} from './gen/depot/sandbox/v1/refs_pb.js'
 import {
   Architecture as ArchitectureProto,
   ListSandboxesRequest_FilterSchema,
@@ -16,6 +17,7 @@ import {
   type Runtime as RuntimeProto,
   type SandboxConfiguration as SandboxConfigurationProto,
   type Sandbox as SandboxProto,
+  type Snapshot as SnapshotProto,
 } from './gen/depot/sandbox/v1/sandbox_pb.js'
 import {SandboxLogs} from './logs.js'
 import {SandboxTailnet} from './tailnet.js'
@@ -30,6 +32,7 @@ import type {
   Runtime,
   SandboxConfiguration,
   SandboxStatus,
+  Snapshot,
 } from './types.js'
 
 /**
@@ -164,6 +167,7 @@ export class Sandbox {
       disableDepotCache: opts.disableDepotCache,
       configuration: opts.configuration !== undefined ? configurationToProto(opts.configuration) : undefined,
       architecture: opts.architecture !== undefined ? architectureToProto(opts.architecture) : undefined,
+      snapshot: opts.snapshot !== undefined ? snapshotRefToProto(opts.snapshot) : undefined,
     })
     const sandbox = response.sandbox
     if (!sandbox) {
@@ -429,11 +433,22 @@ export class Sandbox {
     return new FileSystem({client: this.client, sandboxId: this.sandboxId})
   }
 
+  /** Capture this sandbox's files into a {@link Snapshot}; pass it as `snapshot` to {@link Sandbox.create}. */
+  async snapshot(): Promise<Snapshot> {
+    const response = await this.client.rpc.snapshotSandbox({
+      sandbox: {selector: {case: 'id', value: this.sandboxId}},
+    })
+    if (!response.snapshot) {
+      throw new Error('SnapshotSandbox response missing `snapshot`')
+    }
+    return snapshotFromProto(response.snapshot)
+  }
+
   /** @internal Refresh this instance's fields from a proto returned by the server. */
   protected applyProto(sandbox: SandboxProto): void {
     this._status = sandboxStatusFromProto(sandbox.status)
     this._resources = resourcesFromProto(sandbox)
-    this._runtime = runtimeFromProto(sandbox)
+    this._runtime = runtimeFromProto(sandbox.runtime)
     this._architecture = architectureFromProto(sandbox.architecture)
     this._createdAt = timestampToDate(sandbox.createdAt)
     this._startedAt = timestampToDate(sandbox.startedAt)
@@ -511,6 +526,8 @@ export interface CreateSandboxOpts {
   configuration?: SandboxConfiguration
   /** CPU architecture to run on. Defaults to `amd64`. A custom `runtime` image without a matching variant fails at boot. */
   architecture?: Architecture
+  /** Boot from a {@link Snapshot} or snapshot id; `runtime` and `architecture` default to the snapshot's. */
+  snapshot?: Snapshot | string
 }
 
 /** Options for {@link Sandbox.setTimeout}. */
@@ -594,11 +611,28 @@ function resourcesFromProto(sandbox: SandboxProto): Resources | undefined {
   return {vcpus: r.vcpus, memoryMb: r.memoryMb, diskGb: r.diskGb}
 }
 
-function runtimeFromProto(sandbox: SandboxProto): Runtime | undefined {
-  const r = sandbox.runtime?.runtime
+function runtimeFromProto(runtime: RuntimeProto | undefined): Runtime | undefined {
+  const r = runtime?.runtime
   if (!r || r.case === undefined) return undefined
   if (r.case === 'named') return {named: r.value}
   return {imageRef: r.value}
+}
+
+function snapshotRefToProto(snapshot: Snapshot | string): SnapshotRefProto {
+  const id = typeof snapshot === 'string' ? snapshot : snapshot.snapshotId
+  return create(SnapshotRefSchema, {selector: {case: 'id', value: id}})
+}
+
+function snapshotFromProto(snapshot: SnapshotProto): Snapshot {
+  return {
+    snapshotId: snapshot.snapshotId,
+    sourceSandboxId: snapshot.sourceSandboxId,
+    createdAt: timestampToDate(snapshot.createdAt),
+    sizeBytes: Number(snapshot.sizeBytes),
+    fileCount: Number(snapshot.fileCount),
+    runtime: runtimeFromProto(snapshot.runtime),
+    architecture: architectureFromProto(snapshot.architecture),
+  }
 }
 
 function timestampToDate(ts: Timestamp | undefined): Date | undefined {

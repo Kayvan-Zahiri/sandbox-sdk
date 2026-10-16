@@ -79,6 +79,9 @@ service SandboxService {
   // WriteFile consumes a request stream that opens with an Init message naming
   // the file, followed by the bytes to write.
   rpc WriteFile(stream WriteFileRequest) returns (WriteFileResponse);
+
+  // SnapshotSandbox saves a running sandbox's files so `CreateSandbox` can boot a new sandbox with them.
+  rpc SnapshotSandbox(SnapshotSandboxRequest) returns (SnapshotSandboxResponse);
 }
 
 // SandboxRef is defined in refs.proto, alongside the other selector messages.
@@ -304,6 +307,8 @@ message CreateSandboxRequest {
   optional Architecture architecture = 10;
   // Skip the Depot Cache environment every command otherwise gets. Default: false.
   optional bool disable_depot_cache = 11;
+  // Snapshot whose files to restore before the sandbox is returned; `runtime` and `architecture` default to its own.
+  optional SnapshotRef snapshot = 12;
 }
 
 message CreateSandboxResponse {
@@ -399,4 +404,32 @@ message SetSandboxTimeoutResponse {
   // The sandbox after its expiry was set, with `expiresAt` reflecting the new
   // deadline.
   Sandbox sandbox = 1;
+}
+
+// A saved copy of a sandbox's files, made by `SnapshotSandbox`.
+message Snapshot {
+  // Unique identifier for the snapshot. Pass it as `CreateSandboxRequest.snapshot` to boot a sandbox with these files.
+  string snapshot_id = 1;
+  // Identifier of the sandbox the files were saved from.
+  string source_sandbox_id = 2;
+  // When the snapshot was saved, in RFC 3339 format.
+  google.protobuf.Timestamp created_at = 3;
+  // Total size of the saved files, in bytes.
+  int64 size_bytes = 4;
+  // Number of files, directories, and symlinks saved.
+  int64 file_count = 5;
+  // Runtime the source sandbox ran, which a sandbox created from the snapshot uses by default.
+  Runtime runtime = 6;
+  // Architecture the source sandbox ran on, which a sandbox created from the snapshot uses by default.
+  Architecture architecture = 7;
+}
+
+message SnapshotSandboxRequest {
+  // The running sandbox whose files to save.
+  SandboxRef sandbox = 1;
+}
+
+message SnapshotSandboxResponse {
+  // The saved snapshot.
+  Snapshot snapshot = 1;
 }

@@ -9,6 +9,7 @@ import {
   SandboxCommandExecutionEvent_FinishedSchema,
   SandboxCommandExecutionEvent_StartedSchema,
 } from './gen/depot/sandbox/v1/command_pb.js'
+import type {SnapshotRef as SnapshotRefProto} from './gen/depot/sandbox/v1/refs_pb.js'
 import {
   Architecture as ArchitectureProto,
   CreateSandboxResponseSchema,
@@ -17,11 +18,13 @@ import {
   SandboxSchema,
   SandboxStatus as SandboxStatusProto,
   SetSandboxTimeoutResponseSchema,
+  SnapshotSandboxResponseSchema,
   StopSandboxResponseSchema,
   type SandboxConfiguration as SandboxConfigurationProto,
   type Sandbox as SandboxProto,
 } from './gen/depot/sandbox/v1/sandbox_pb.js'
 import {Sandbox, type CreateSandboxOpts, type SetTimeoutOpts} from './sandbox.js'
+import type {Snapshot} from './types.js'
 
 const CREATED_AT = new Date('2026-06-08T12:00:00.000Z')
 const STARTED_AT = new Date('2026-06-08T12:00:01.000Z')
@@ -122,6 +125,7 @@ test('Sandbox.create takes an explicit client and binds it to the returned sandb
     disableDepotCache: undefined,
     configuration: undefined,
     architecture: undefined,
+    snapshot: undefined,
   })
 
   await sandbox.stop()
@@ -228,6 +232,7 @@ test('Sandbox.create sends timeoutMinutes when provided', async () => {
     disableDepotCache: undefined,
     configuration: undefined,
     architecture: undefined,
+    snapshot: undefined,
   })
 })
 
@@ -453,4 +458,61 @@ test('Sandbox.create leaves architecture unset by default', async () => {
   const sandbox = await Sandbox.create(recording.client)
   assert.equal((recording.lastRequest('createSandbox') as {architecture?: ArchitectureProto}).architecture, undefined)
   assert.equal(sandbox.architecture, undefined, 'UNSPECIFIED from an older server maps to undefined')
+})
+
+test('sandbox.snapshot sends the sandbox ref and maps the returned Snapshot', async () => {
+  const recording = fakeClient({
+    createSandbox: () => createResponse(makeSandbox({sandboxId: 'sbx_src'})),
+    snapshotSandbox: () =>
+      create(SnapshotSandboxResponseSchema, {
+        snapshot: {
+          snapshotId: 'snap_1',
+          sourceSandboxId: 'sbx_src',
+          createdAt: timestampFromDate(CREATED_AT),
+          sizeBytes: 2048n,
+          fileCount: 3n,
+          runtime: {runtime: {case: 'imageRef', value: 'registry.depot.dev/x:y'}},
+          architecture: ArchitectureProto.ARM64,
+        },
+      }),
+  })
+  const sandbox = await Sandbox.create(recording.client)
+  const snapshot = await sandbox.snapshot()
+  assert.deepEqual(recording.lastRequest('snapshotSandbox'), {sandbox: {selector: {case: 'id', value: 'sbx_src'}}})
+  assert.deepEqual(snapshot, {
+    snapshotId: 'snap_1',
+    sourceSandboxId: 'sbx_src',
+    createdAt: CREATED_AT,
+    sizeBytes: 2048,
+    fileCount: 3,
+    runtime: {imageRef: 'registry.depot.dev/x:y'},
+    architecture: 'arm64',
+  })
+})
+
+test('sandbox.snapshot throws when the response has no snapshot', async () => {
+  const recording = fakeClient({
+    createSandbox: () => createResponse(makeSandbox()),
+    snapshotSandbox: () => create(SnapshotSandboxResponseSchema, {}),
+  })
+  const sandbox = await Sandbox.create(recording.client)
+  await assert.rejects(sandbox.snapshot(), /SnapshotSandbox response missing `snapshot`/)
+})
+
+test('Sandbox.create accepts a Snapshot or a snapshot id', async () => {
+  const recording = fakeClient({createSandbox: () => createResponse(makeSandbox())})
+  const snapshotOf = () => (recording.lastRequest('createSandbox') as {snapshot?: SnapshotRefProto}).snapshot?.selector
+  await Sandbox.create(recording.client, {snapshot: 'snap_by_id'})
+  assert.deepEqual(snapshotOf(), {case: 'id', value: 'snap_by_id'})
+  const snapshot: Snapshot = {
+    snapshotId: 'snap_obj',
+    sourceSandboxId: 'sbx_1',
+    createdAt: CREATED_AT,
+    sizeBytes: 0,
+    fileCount: 0,
+    runtime: undefined,
+    architecture: undefined,
+  }
+  await Sandbox.create(recording.client, {snapshot})
+  assert.deepEqual(snapshotOf(), {case: 'id', value: 'snap_obj'})
 })

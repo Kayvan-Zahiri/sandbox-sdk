@@ -12,7 +12,7 @@ import {fileDesc, messageDesc} from '@bufbuild/protobuf/codegenv2'
 export const file_depot_sandbox_v1_refs: GenFile =
   /*@__PURE__*/
   fileDesc(
-    'ChtkZXBvdC9zYW5kYm94L3YxL3JlZnMucHJvdG8SEGRlcG90LnNhbmRib3gudjEiJgoKU2FuZGJveFJlZhIMCgJpZBgBIAEoCUgAQgoKCHNlbGVjdG9yYgZwcm90bzM',
+    'ChtkZXBvdC9zYW5kYm94L3YxL3JlZnMucHJvdG8SEGRlcG90LnNhbmRib3gudjEiJgoKU2FuZGJveFJlZhIMCgJpZBgBIAEoCUgAQgoKCHNlbGVjdG9yIicKC1NuYXBzaG90UmVmEgwKAmlkGAEgASgJSABCCgoIc2VsZWN0b3JiBnByb3RvMw',
   )
 
 /**
@@ -46,3 +46,33 @@ export type SandboxRef = Message<'depot.sandbox.v1.SandboxRef'> & {
  * Use `create(SandboxRefSchema)` to create a new message.
  */
 export const SandboxRefSchema: GenMessage<SandboxRef> = /*@__PURE__*/ messageDesc(file_depot_sandbox_v1_refs, 0)
+
+/**
+ * Names a single sandbox snapshot. The snapshot methods are still being
+ * built, so for now the selector oneof carries only an id, with room to add
+ * other forms later.
+ *
+ * @generated from message depot.sandbox.v1.SnapshotRef
+ */
+export type SnapshotRef = Message<'depot.sandbox.v1.SnapshotRef'> & {
+  /**
+   * @generated from oneof depot.sandbox.v1.SnapshotRef.selector
+   */
+  selector:
+    | {
+        /**
+         * Server-assigned identifier for the snapshot.
+         *
+         * @generated from field: string id = 1;
+         */
+        value: string
+        case: 'id'
+      }
+    | {case: undefined; value?: undefined}
+}
+
+/**
+ * Describes the message depot.sandbox.v1.SnapshotRef.
+ * Use `create(SnapshotRefSchema)` to create a new message.
+ */
+export const SnapshotRefSchema: GenMessage<SnapshotRef> = /*@__PURE__*/ messageDesc(file_depot_sandbox_v1_refs, 1)
