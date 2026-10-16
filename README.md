@@ -94,7 +94,7 @@ console.log(await copy.fs().readFile('/home/runner/notes.txt', {encoding: 'utf8'
 
 Caches, the default image's toolchains (such as `.nvm` and `.rustup`), and rebuildable `/workspace` directories (such as `node_modules` and `.venv`) are left out, so reinstall dependencies in the copy. See the [SDK reference](https://depot.dev/docs/api/sandbox-sdk-reference#snapshot-a-sandbox) for the full list.
 
-The new sandbox uses the snapshot's runtime and architecture unless you set `runtime` yourself. Setting an `architecture` that differs from the snapshot's fails create with `InvalidArgument`.
+The new sandbox uses the snapshot's runtime and architecture unless you set `runtime` yourself. Setting an `architecture` that differs from the snapshot's fails create with `InvalidArgument`. `sandbox.snapshot()` fails with `FailedPrecondition` on a sandbox whose [CI secrets](#ci-secrets) set `environment` or `repository`, because a snapshot doesn't carry that scope.
 
 ## Beta Surface
 
