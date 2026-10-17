@@ -91,8 +91,10 @@ export class SandboxTailnet {
       }
       const remaining = deadline - Date.now()
       if (remaining <= 0) throw new TailnetTimeoutError(status)
-      await new Promise((resolve) => setTimeout(resolve, Math.min(intervalMs, remaining)))
-      if (Date.now() >= deadline) throw new TailnetTimeoutError(status)
+      // Timers can fire before Date.now() reaches their due time, so trust a sleep to the deadline.
+      const sleepMs = Math.min(intervalMs, remaining)
+      await new Promise((resolve) => setTimeout(resolve, sleepMs))
+      if (sleepMs === remaining || Date.now() >= deadline) throw new TailnetTimeoutError(status)
     }
   }
 }
