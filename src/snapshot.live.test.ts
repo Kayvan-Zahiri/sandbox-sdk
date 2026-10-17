@@ -15,7 +15,7 @@ test('snapshot round trip restores a written file', {skip: !token, timeout: 10 *
   const source = await Sandbox.create(client, {name: 'sdk-snapshot-live-source', timeoutMinutes: 15})
   let restored: Sandbox | undefined
   try {
-    const home = await (await source.runCommand({cmd: 'sh', args: ['-c', 'printf %s "$HOME"']})).stdout()
+    const home = await (await source.runCommand({cmd: '/bin/sh', args: ['-c', 'printf %s "$HOME"']})).stdout()
     const path = `${home}/snapshot-check.txt`
     await source.fs().writeFile(path, 'round trip')
     const snapshot = await source.snapshot()
