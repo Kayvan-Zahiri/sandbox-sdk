@@ -1,13 +1,22 @@
-import {create, type MessageInitShape} from '@bufbuild/protobuf'
+import {create, toBinary, type MessageInitShape} from '@bufbuild/protobuf'
 import {timestampFromDate} from '@bufbuild/protobuf/wkt'
+import type {ServiceImpl} from '@connectrpc/connect'
+import {connectNodeAdapter} from '@connectrpc/connect-node'
+import {encodeEnvelope} from '@connectrpc/connect/protocol'
 import assert from 'node:assert'
+import {spawn} from 'node:child_process'
+import {once} from 'node:events'
+import http2 from 'node:http2'
+import type {AddressInfo} from 'node:net'
 import test from 'node:test'
+import {fileURLToPath} from 'node:url'
 import type {SandboxClient} from './client.js'
 import {FileSystem} from './filesystem.js'
 import {
-  SandboxCommandExecutionEventSchema,
   SandboxCommandExecutionEvent_FinishedSchema,
   SandboxCommandExecutionEvent_StartedSchema,
+  SandboxCommandExecutionEventSchema,
+  type SandboxCommandExecutionEvent,
 } from './gen/depot/sandbox/v1/command_pb.js'
 import type {SnapshotRef as SnapshotRefProto} from './gen/depot/sandbox/v1/refs_pb.js'
 import {
@@ -16,6 +25,7 @@ import {
   GetSandboxResponseSchema,
   ListSandboxesResponseSchema,
   SandboxSchema,
+  SandboxService,
   SandboxStatus as SandboxStatusProto,
   SetSandboxTimeoutResponseSchema,
   SnapshotSandboxResponseSchema,
@@ -515,4 +525,91 @@ test('Sandbox.create accepts a Snapshot or a snapshot id', async () => {
   }
   await Sandbox.create(recording.client, {snapshot})
   assert.deepEqual(snapshotOf(), {case: 'id', value: 'snap_obj'})
+})
+
+// Runs a script against a real HTTP/2 server in a child process and reports
+// whether that process exits on its own, the thing a stream leak breaks.
+// rawRunCommand's last frame lands after the client has read the others, as the
+// live API's end-of-stream frame can land after Finished.
+async function childExits(
+  scenario: string,
+  impl: Partial<ServiceImpl<typeof SandboxService>>,
+  rawRunCommand?: {frames: Uint8Array[]; last: Uint8Array},
+): Promise<boolean> {
+  const adapter = connectNodeAdapter({
+    routes: (r) => r.service(SandboxService, {getSandbox: () => ({sandbox: makeSandbox()}), ...impl}),
+  })
+  const server = http2.createServer((req, res) => {
+    if (!rawRunCommand || !req.url.endsWith('/RunCommand')) return adapter(req, res)
+    req.resume()
+    res.writeHead(200, {'content-type': 'application/connect+proto'})
+    for (const frame of rawRunCommand.frames) res.write(frame)
+    setTimeout(() => res.end(rawRunCommand.last), 100)
+  })
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve))
+  const {port} = server.address() as AddressInfo
+  const script = `
+    const [client, sandbox, endpoint, scenario] = process.argv.slice(1)
+    const {createClient} = await import(client)
+    const {Sandbox} = await import(sandbox)
+    const box = await Sandbox.get(createClient({token: 't', endpoint}), 'sbx_1')
+    if (scenario === 'wait') await (await box.runCommand({cmd: 'echo'})).wait()
+    if (scenario === 'detached') await box.runCommand({cmd: 'sleep', detached: true})
+    if (scenario === 'break') for await (const _ of box.logs.tail()) { await new Promise((r) => setTimeout(r, 100)); break }`
+  const src = (file: string) => fileURLToPath(new URL(file, import.meta.url))
+  const child = spawn(
+    process.execPath,
+    [
+      '--import',
+      'tsx',
+      '--input-type=module',
+      '-e',
+      script,
+      src('client.ts'),
+      src('sandbox.ts'),
+      `http://127.0.0.1:${port}`,
+      scenario,
+    ],
+    {stdio: 'inherit'},
+  )
+  try {
+    const timeout = setTimeout(() => child.kill(), 5000)
+    const [code] = (await once(child, 'exit')) as [number | null]
+    clearTimeout(timeout)
+    return code === 0
+  } finally {
+    server.close()
+  }
+}
+
+test('the process exits after runCommand wait()', async () => {
+  const event = (e: SandboxCommandExecutionEvent) => encodeEnvelope(0, toBinary(SandboxCommandExecutionEventSchema, e))
+  const exits = await childExits(
+    'wait',
+    {},
+    {
+      frames: [event(makeStartedEvent('cmd_1')), event(makeFinishedEvent(0))],
+      last: encodeEnvelope(2, new TextEncoder().encode('{}')),
+    },
+  )
+  assert.equal(exits, true)
+})
+
+test('the process exits after a detached runCommand', async () => {
+  const exits = await childExits('detached', {
+    async *runCommand(_req, context) {
+      yield makeStartedEvent('cmd_1')
+      await once(context.signal, 'abort')
+    },
+  })
+  assert.equal(exits, true)
+})
+
+test('the process exits after breaking out of a log iterator', async () => {
+  const exits = await childExits('break', {
+    async *tailSandboxLogs() {
+      for (const message of ['a', 'b', 'c']) yield {message, source: 'stdout', timestamp: timestampFromDate(STARTED_AT)}
+    },
+  })
+  assert.equal(exits, true)
 })

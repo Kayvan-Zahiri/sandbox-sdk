@@ -318,24 +318,27 @@ export class Sandbox {
    * logs(), output(), and wait() remain unavailable in detached mode.
    */
   async runCommand(opts: RunCommandOpts): Promise<SandboxCommandExecution> {
-    const stream = this.client.rpc.runCommand({
-      sandbox: {selector: {case: 'id', value: this.sandboxId}},
-      cmd: opts.cmd,
-      args: opts.args ?? [],
-      cwd: opts.cwd,
-      env: opts.env ?? {},
-      sudo: opts.sudo,
-      detached: opts.detached,
-    })
+    // Connect's stream iterators have no return(); only abort closes the stream,
+    // so every path below aborts once it stops reading (DEP-7687).
+    const controller = new AbortController()
+    const stream = this.client.rpc.runCommand(
+      {
+        sandbox: {selector: {case: 'id', value: this.sandboxId}},
+        cmd: opts.cmd,
+        args: opts.args ?? [],
+        cwd: opts.cwd,
+        env: opts.env ?? {},
+        sudo: opts.sudo,
+        detached: opts.detached,
+      },
+      {signal: controller.signal},
+    )
 
     // Pull the first event; it MUST be Started so the SDK can build the
     // SandboxCommandExecution instance with the server-minted cmd_id. Anything else
     // (including a missing oneof case) is a protocol violation. We don't
     // use for-await-of here because we hand the iterator off to
-    // drainStream once Started lands; the cost is that the implicit
-    // cleanup for-await-of provides doesn't apply, so any early-exit
-    // path has to call iterator.return() explicitly or the underlying
-    // HTTP/2 stream stays open until GC.
+    // drainStream once Started lands.
     const iterator = stream[Symbol.asyncIterator]()
     let startedEvent: SandboxCommandExecutionEvent
     try {
@@ -351,13 +354,7 @@ export class Sandbox {
         )
       }
     } catch (err) {
-      if (typeof iterator.return === 'function') {
-        try {
-          await iterator.return()
-        } catch {
-          // ignore — best-effort cleanup
-        }
-      }
+      controller.abort()
       throw err
     }
     const startedAt =
@@ -388,16 +385,10 @@ export class Sandbox {
     if (opts.detached) {
       // Fire-and-forget: the server ends the stream right after Started and
       // keeps the command running in the sandbox. There is no further output to
-      // pump, so close the iterator instead of draining it — draining would see
+      // pump, so close the stream instead of draining it — draining would see
       // the stream end without a Finished event and wrongly mark the command
       // failed. logs(), output(), and wait() throw for detached commands.
-      if (typeof iterator.return === 'function') {
-        try {
-          await iterator.return()
-        } catch {
-          // ignore — best-effort cleanup
-        }
-      }
+      controller.abort()
       return command
     }
 
@@ -410,7 +401,7 @@ export class Sandbox {
     // a `.catch()` here would be dead code. We still need to consume the
     // promise so an uncaught-rejection lint doesn't fire if drainStream
     // is ever changed to surface errors — void-mark it explicitly.
-    void drainStream(command, iterator)
+    void drainStream(command, iterator, controller)
 
     return command
   }
@@ -650,6 +641,7 @@ function bigintToNumber(value: bigint | undefined): number | undefined {
 async function drainStream(
   command: SandboxCommandExecution,
   iterator: AsyncIterator<SandboxCommandExecutionEvent>,
+  controller: AbortController,
 ): Promise<void> {
   let sawFinished = false
   try {
@@ -676,22 +668,8 @@ async function drainStream(
   } catch (err) {
     _commandInternals.fail(command, err)
   } finally {
-    // We obtained `iterator` by calling stream[Symbol.asyncIterator]()
-    // and manually drove it with .next(), so a regular for-await-of's
-    // implicit cleanup doesn't apply. If we broke out of the loop on
-    // 'finished' (or `_commandInternals.fail` raised), the underlying
-    // HTTP/2 stream stays open until GC reclaims the iterator. Signal
-    // explicitly so the transport can release it now. .return() is
-    // optional on AsyncIterator; guard for that and swallow errors so
-    // a misbehaving iterator doesn't shadow whatever we already
-    // recorded above.
-    if (typeof iterator.return === 'function') {
-      try {
-        await iterator.return()
-      } catch {
-        // ignore — best-effort cleanup
-      }
-    }
+    // The loop stops at Finished, before the end of the stream; close it.
+    controller.abort()
   }
 }
 
