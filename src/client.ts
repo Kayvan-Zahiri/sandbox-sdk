@@ -1,5 +1,7 @@
 import {createClient as createConnectClient, type Client} from '@connectrpc/connect'
-import {createConnectTransport} from '@connectrpc/connect-node'
+import {createConnectTransport, Http2SessionManager} from '@connectrpc/connect-node'
+import {AsyncLocalStorage} from 'node:async_hooks'
+import type {ClientHttp2Stream} from 'node:http2'
 import {SandboxService} from './gen/depot/sandbox/v1/sandbox_pb.js'
 
 /** Default Connect endpoint for the v1 sandbox API. */
@@ -22,16 +24,37 @@ export function createClient(opts: CreateClientOpts): SandboxClient {
   const transport = createConnectTransport({
     baseUrl: endpoint,
     httpVersion: '2',
+    sessionManager: new ReleasingSessionManager(endpoint),
     interceptors: [
       (next) => (req) => {
         applyAuthHeaders(req, opts)
-        return next(req)
+        return callSignal.run(req.signal, () => next(req))
       },
     ],
   })
   return {
     rpc: createConnectClient(SandboxService, transport),
     endpoint,
+  }
+}
+
+const callSignal = new AsyncLocalStorage<AbortSignal>()
+
+// A canceled call leaves its stream open when the server already ended it:
+// connect-node skips close() on a closed stream, and Node keeps one open until
+// its response is read. The open stream holds the connection, so the process
+// never exits. Destroy it once its call is aborted (DEP-7687).
+class ReleasingSessionManager extends Http2SessionManager {
+  override async request(...args: Parameters<Http2SessionManager['request']>): Promise<ClientHttp2Stream> {
+    const signal = callSignal.getStore()
+    const stream = await super.request(...args)
+    if (signal) {
+      const release = () => stream.destroy()
+      if (signal.aborted) release()
+      signal.addEventListener('abort', release, {once: true})
+      stream.once('close', () => signal.removeEventListener('abort', release))
+    }
+    return stream
   }
 }
 
