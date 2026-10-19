@@ -101,7 +101,9 @@ test('waitForAddress times out with the last status it saw', async () => {
   })
 })
 
-test('waitForAddress starts no status check once the deadline has passed', async () => {
+test('waitForAddress starts no status check once the deadline has passed', {timeout: 1_000}, async (t) => {
+  const now = Date.now()
+  t.mock.method(Date, 'now', () => now)
   const {tailnet, requests} = fakeTailnet([{exitCode: 0, stdout: NEEDS_LOGIN}])
   await assert.rejects(tailnet.waitForAddress({timeoutMs: 10, intervalMs: 50}), TailnetTimeoutError)
   assert.equal(requests.length, 1)
