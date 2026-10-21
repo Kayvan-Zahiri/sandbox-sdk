@@ -448,7 +448,7 @@ export class FileSystem {
 
   /** chmod. `mode` accepts an octal integer (`0o755`) or an octal string (`"755"`). */
   async chmod(path: string, mode: number | string): Promise<void> {
-    const numeric = typeof mode === 'string' ? parseInt(mode, 8) : mode
+    const numeric = typeof mode === 'string' ? (/^[0-7]+$/.test(mode) ? parseInt(mode, 8) : NaN) : mode
     assertValidMode(numeric, 'chmod', path)
     try {
       await this.client.rpc.chmod({...this.ref(), path, mode: numeric})

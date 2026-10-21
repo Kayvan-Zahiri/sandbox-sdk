@@ -354,3 +354,23 @@ test('chmod rejects an out-of-range numeric mode with EINVAL', async () => {
     (err: unknown) => err instanceof FileSystemError && err.code === 'EINVAL',
   )
 })
+
+for (const mode of ['755junk', '7558', '7.5', '0o755', '', '+755', '-0', ' 755']) {
+  test(`chmod rejects malformed octal mode ${JSON.stringify(mode)} before making an RPC`, async () => {
+    let called = false
+    const fs = new FileSystem({
+      client: fakeClient({
+        chmod: () => {
+          called = true
+          return {}
+        },
+      }).client,
+      sandboxId: 'sbx_1',
+    })
+    await assert.rejects(
+      () => fs.chmod('/f', mode),
+      (err: unknown) => err instanceof FileSystemError && err.code === 'EINVAL',
+    )
+    assert.equal(called, false)
+  })
+}
